@@ -1,0 +1,7 @@
+# OBSIDIAN feeds — one web address per line. Lines with # are ignored.
+
+https://www.thehindu.com/news/national/feeder/default.rss
+https://rss.dw.com/rdf/rss-en-all
+http://feeds.bbci.co.uk/news/world/rss.xml
+https://www.aljazeera.com/xml/rss/all.xml
+https://www.theguardian.com/world/rss
