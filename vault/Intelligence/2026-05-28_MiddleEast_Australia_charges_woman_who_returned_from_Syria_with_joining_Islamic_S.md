@@ -2,7 +2,7 @@
 title: "Australia charges woman who returned from Syria with joining Islamic State"
 topic: MiddleEast
 priority: LOW
-date: 2026-05-28T09:06:24.043579+00:00
+date: 2026-05-28T15:54:04.388939+00:00
 url: https://www.bbc.com/news/articles/c87q2w0w0jvo?at_medium=RSS&at_campaign=rss
 tags: [intel, MiddleEast, LOW]
 ---

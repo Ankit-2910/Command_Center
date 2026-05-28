@@ -2,7 +2,7 @@
 title: "Sixteen pupils killed in Kenya school fire"
 topic: Africa
 priority: MEDIUM
-date: 2026-05-28T09:06:24.030236+00:00
+date: 2026-05-28T15:54:04.385634+00:00
 url: https://www.bbc.com/news/articles/cx21kkxq81po?at_medium=RSS&at_campaign=rss
 tags: [intel, Africa, MEDIUM]
 ---

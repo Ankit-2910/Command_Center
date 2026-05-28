@@ -2,7 +2,7 @@
 title: "Victorian greyhound trainer avoids ban despite dog being found with cocaine in system"
 topic: AsiaPacific
 priority: LOW
-date: 2026-05-28T09:12:32.201915+00:00
+date: 2026-05-28T15:54:05.878169+00:00
 url: https://www.theguardian.com/australia-news/2026/may/28/victorian-greyhound-trainer-avoids-ban-despite-dog-being-found-with-cocaine-in-system-ntwnfb
 tags: [intel, AsiaPacific, LOW]
 ---

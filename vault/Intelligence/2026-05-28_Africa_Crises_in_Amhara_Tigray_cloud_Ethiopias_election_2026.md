@@ -2,7 +2,7 @@
 title: "Crises in Amhara, Tigray cloud Ethiopia's election 2026"
 topic: Africa
 priority: LOW
-date: 2026-05-28T09:06:22.965997+00:00
+date: 2026-05-28T15:54:03.514011+00:00
 url: https://www.dw.com/en/crises-in-amhara-tigray-cloud-ethiopia-s-election-2026/a-77233448?maca=en-rss-en-all-1573-rdf
 tags: [intel, Africa, LOW]
 ---

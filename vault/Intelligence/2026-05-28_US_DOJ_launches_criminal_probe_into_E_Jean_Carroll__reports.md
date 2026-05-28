@@ -2,7 +2,7 @@
 title: "DOJ launches criminal probe into E. Jean Carroll — reports"
 topic: US
 priority: LOW
-date: 2026-05-28T09:06:22.974733+00:00
+date: 2026-05-28T15:54:03.535953+00:00
 url: https://www.dw.com/en/doj-launches-criminal-probe-into-e-jean-carroll-reports/a-77321436?maca=en-rss-en-all-1573-rdf
 tags: [intel, US, LOW]
 ---

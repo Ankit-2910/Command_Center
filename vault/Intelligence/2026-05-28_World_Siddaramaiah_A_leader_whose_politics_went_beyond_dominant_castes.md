@@ -2,7 +2,7 @@
 title: "Siddaramaiah: A leader whose politics went beyond dominant castes"
 topic: World
 priority: LOW
-date: 2026-05-28T09:12:29.011333+00:00
+date: 2026-05-28T15:54:01.732506+00:00
 url: https://www.thehindu.com/news/national/karnataka/siddaramaiah-karnataka-cm-dk-shivakumar-congress-who-is-he-profile/article71030399.ece
 tags: [intel, World, LOW]
 ---

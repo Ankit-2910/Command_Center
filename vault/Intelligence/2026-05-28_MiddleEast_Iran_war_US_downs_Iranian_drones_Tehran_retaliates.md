@@ -2,7 +2,7 @@
 title: "Iran war: US downs Iranian drones, Tehran retaliates"
 topic: MiddleEast
 priority: HIGH
-date: 2026-05-28T09:06:22.975747+00:00
+date: 2026-05-28T15:54:03.537017+00:00
 url: https://www.dw.com/en/iran-war-us-downs-iranian-drones-tehran-retaliates/live-77321432?maca=en-rss-en-all-1573-rdf
 tags: [intel, MiddleEast, HIGH]
 ---

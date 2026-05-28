@@ -2,7 +2,7 @@
 title: "US building Ebola quarantine center in Kenya for Americans amid outbreak"
 topic: US
 priority: LOW
-date: 2026-05-28T09:06:25.561493+00:00
+date: 2026-05-28T15:54:05.847046+00:00
 url: https://www.theguardian.com/us-news/2026/may/27/trump-administration-ebola-quarantine-kenya
 tags: [intel, US, LOW]
 ---

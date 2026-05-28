@@ -412,3 +412,128 @@ def dashboard():
         "sentiment": {"score": score, "label": label},
         "insights": insights[:4], "ai": ollama_up(),
     }
+
+
+# ===========================================================================
+# MARITIME & SUPPLY-CHAIN INTELLIGENCE (H1 vertical slice)
+# The "so what does it mean for me" layer: detect chokepoint events,
+# map them to commodities -> sectors, and surface impact chains.
+# ===========================================================================
+
+CHOKEPOINTS = {
+    "Strait of Hormuz": {
+        "keywords": ["hormuz", "persian gulf"],
+        "commodities": ["Crude oil", "LNG", "Petroleum"],
+        "sectors": ["Energy", "Automotive", "Aviation", "Manufacturing"],
+        "region": "MiddleEast", "lat": 26.6, "lon": 56.5,
+        "chain": ["Tanker traffic disrupted", "Oil & LNG freight delayed",
+                  "Energy prices spike", "Transport & manufacturing costs rise"],
+    },
+    "Red Sea / Bab el-Mandeb": {
+        "keywords": ["red sea", "bab el-mandeb", "bab-el-mandeb", "houthi"],
+        "commodities": ["Container freight", "Oil"],
+        "sectors": ["Retail", "Electronics", "Automotive", "Energy"],
+        "region": "MiddleEast", "lat": 12.6, "lon": 43.3,
+        "chain": ["Carriers reroute via Cape of Good Hope", "+10-14 day transit",
+                  "Freight & insurance costs rise", "Retail & electronics delays"],
+    },
+    "Suez Canal": {
+        "keywords": ["suez"],
+        "commodities": ["Container freight", "Oil"],
+        "sectors": ["Retail", "Manufacturing", "Energy"],
+        "region": "MiddleEast", "lat": 30.0, "lon": 32.5,
+        "chain": ["Canal transit blocked", "Europe-Asia trade rerouted",
+                  "Delivery delays", "Manufacturing input shortages"],
+    },
+    "Taiwan Strait": {
+        "keywords": ["taiwan strait", "taiwan"],
+        "commodities": ["Semiconductors", "Electronics"],
+        "sectors": ["Semiconductor", "Electronics", "Automotive", "Defense"],
+        "region": "China", "lat": 24.5, "lon": 119.5,
+        "chain": ["Naval tension rises", "Chip exports threatened",
+                  "Semiconductor supply risk", "Electronics & auto production hit"],
+    },
+    "South China Sea": {
+        "keywords": ["south china sea", "spratly", "scarborough"],
+        "commodities": ["Container freight", "LNG"],
+        "sectors": ["Manufacturing", "Electronics", "Energy"],
+        "region": "China", "lat": 13.0, "lon": 114.0,
+        "chain": ["Naval friction", "Trade-route risk", "Rerouting & insurance up",
+                  "Asia manufacturing exposure"],
+    },
+    "Panama Canal": {
+        "keywords": ["panama canal"],
+        "commodities": ["Container freight", "Grain", "LNG"],
+        "sectors": ["Agriculture", "Retail", "Energy"],
+        "region": "Americas", "lat": 9.1, "lon": -79.7,
+        "chain": ["Transit slots limited", "US-Asia/Atlantic delays",
+                  "Shipping costs rise", "Grain & retail supply pressure"],
+    },
+    "Black Sea": {
+        "keywords": ["black sea", "odesa", "odessa", "bosphorus"],
+        "commodities": ["Grain", "Fertilizer", "Oil"],
+        "sectors": ["Agriculture", "Food", "Energy"],
+        "region": "Russia", "lat": 43.0, "lon": 34.0,
+        "chain": ["Export corridor disrupted", "Grain & fertilizer flow cut",
+                  "Global food prices rise", "Food & agri sector pressure"],
+    },
+    "Strait of Malacca": {
+        "keywords": ["malacca"],
+        "commodities": ["Oil", "Container freight"],
+        "sectors": ["Energy", "Manufacturing", "Electronics"],
+        "region": "AsiaPacific", "lat": 2.5, "lon": 101.0,
+        "chain": ["Chokepoint disruption", "Asia oil & trade flow hit",
+                  "Rerouting costs", "Energy & manufacturing exposure"],
+    },
+}
+
+_LVL = {"LOW": 0, "ELEVATED": 1, "HIGH": 2, "CRITICAL": 3}
+_LVL_NAME = ["LOW", "ELEVATED", "HIGH", "CRITICAL"]
+
+
+def supply_chain():
+    """Detect chokepoint events, score risk, map to sector exposure + impact chains."""
+    conn = db()
+    rows = conn.execute(
+        "SELECT title, summary, url, priority, added FROM seen "
+        "ORDER BY added DESC LIMIT 600"
+    ).fetchall()
+    conn.close()
+
+    chokepoints, sector_acc = [], {}
+    for name, cfg in CHOKEPOINTS.items():
+        matched = []
+        for r in rows:
+            text = (r["title"] + " " + (r["summary"] or "")).lower()
+            if any(k in text for k in cfg["keywords"]):
+                matched.append(r)
+        cnt = len(matched)
+        high = sum(1 for m in matched if m["priority"] == "HIGH")
+        if high >= 2 or cnt >= 5:
+            risk = "CRITICAL"
+        elif high >= 1 or cnt >= 3:
+            risk = "HIGH"
+        elif cnt >= 1:
+            risk = "ELEVATED"
+        else:
+            risk = "LOW"
+        events = [{"title": m["title"], "url": m["url"], "priority": m["priority"],
+                   "date": (m["added"] or "")[:10]} for m in matched[:5]]
+        chokepoints.append({
+            "name": name, "region": cfg["region"], "lat": cfg["lat"], "lon": cfg["lon"],
+            "risk": risk, "event_count": cnt, "commodities": cfg["commodities"],
+            "sectors": cfg["sectors"], "chain": cfg["chain"], "events": events,
+        })
+        if risk != "LOW":
+            for s in cfg["sectors"]:
+                cur = sector_acc.get(s, {"level": 0, "drivers": set()})
+                cur["level"] = max(cur["level"], _LVL[risk])
+                cur["drivers"].add(name)
+                sector_acc[s] = cur
+
+    chokepoints.sort(key=lambda x: (_LVL[x["risk"]], x["event_count"]), reverse=True)
+    sectors = [{"sector": s, "exposure": _LVL_NAME[v["level"]],
+                "drivers": sorted(v["drivers"])}
+               for s, v in sorted(sector_acc.items(), key=lambda kv: -kv[1]["level"])]
+    active = sum(1 for c in chokepoints if c["risk"] != "LOW")
+    return {"chokepoints": chokepoints, "sectors": sectors, "active": active}

@@ -2,7 +2,7 @@
 title: "WHO chief calls for DRC ceasefire to tackle Ebola outbreak"
 topic: Africa
 priority: HIGH
-date: 2026-05-28T09:06:25.568305+00:00
+date: 2026-05-28T15:54:05.849694+00:00
 url: https://www.theguardian.com/world/2026/may/27/who-chief-tedros-calls-for-drc-ceasefire-ebola
 tags: [intel, Africa, HIGH]
 ---

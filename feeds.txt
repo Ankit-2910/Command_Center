@@ -1,4 +1,4 @@
-# OBSIDIAN feeds — one web address per line. Lines with # are ignored.
+# OBSIDIAN feeds — one web address per line.
 
 https://www.thehindu.com/news/national/feeder/default.rss
 https://rss.dw.com/rdf/rss-en-all

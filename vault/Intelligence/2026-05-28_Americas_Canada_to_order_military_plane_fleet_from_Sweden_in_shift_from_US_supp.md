@@ -2,7 +2,7 @@
 title: "Canada to order military plane fleet from Sweden in shift from US suppliers"
 topic: Americas
 priority: HIGH
-date: 2026-05-28T09:06:25.570588+00:00
+date: 2026-05-28T15:54:05.860294+00:00
 url: https://www.theguardian.com/world/2026/may/27/canada-sweden-saab-globaleye-aircraft
 tags: [intel, Americas, HIGH]
 ---

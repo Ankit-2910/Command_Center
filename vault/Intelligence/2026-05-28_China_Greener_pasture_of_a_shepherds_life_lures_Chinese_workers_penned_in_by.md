@@ -2,7 +2,7 @@
 title: "Greener pasture of a shepherd’s life lures Chinese workers penned in by ‘996’ jobs"
 topic: China
 priority: HIGH
-date: 2026-05-28T09:06:25.573313+00:00
+date: 2026-05-28T15:54:05.866933+00:00
 url: https://www.theguardian.com/world/2026/may/28/chinese-workers-apply-mongolian-farmer-hiring-shepherd-job-advert
 tags: [intel, China, HIGH]
 ---

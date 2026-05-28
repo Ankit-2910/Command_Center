@@ -2,7 +2,7 @@
 title: "Matthew Perry's assistant jailed for 41 months over actor's ketamine death"
 topic: World
 priority: LOW
-date: 2026-05-28T09:06:24.040578+00:00
+date: 2026-05-28T15:54:04.399468+00:00
 url: https://www.bbc.com/news/articles/cjepvx151gqo?at_medium=RSS&at_campaign=rss
 tags: [intel, World, LOW]
 ---
