@@ -180,6 +180,25 @@ def ensure_setup():
         FEEDS_FILE.write_text(
             "# OBSIDIAN feeds — one web address per line.\n\n"
             + "\n".join(DEFAULT_FEEDS) + "\n", encoding="utf-8")
+    # One-time self-healing: if older runs stored single-letter domains
+    # (a bug in an early GDELT path), re-classify them properly so the
+    # topic sidebar shows correct names.
+    try:
+        conn = db()
+        rows = conn.execute(
+            "SELECT id, title FROM seen WHERE LENGTH(domain)=1"
+        ).fetchall()
+        fixed = 0
+        for r in rows:
+            new_topic = classify(r["title"]) or "World"
+            conn.execute("UPDATE seen SET domain=? WHERE id=?",
+                         (new_topic, r["id"]))
+            fixed += 1
+        if fixed:
+            conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 
 def load_feeds():
@@ -243,7 +262,19 @@ def collect():
         except Exception:
             continue
     conn.close()
-    return {"new": new_count, "ai": use_ai}
+    # GDELT augmentation — pull hotspot-targeted articles from 100k+ global sources.
+    # Defined later in this file; safe if missing.
+    gdelt_new = 0
+    gdelt_outlets = 0
+    try:
+        g = collect_gdelt()
+        if isinstance(g, dict):
+            gdelt_new = g.get("new", 0)
+            gdelt_outlets = g.get("outlets", 0)
+    except Exception:
+        pass
+    return {"new": new_count + gdelt_new, "rss": new_count,
+            "gdelt": gdelt_new, "gdelt_outlets": gdelt_outlets, "ai": use_ai}
 
 
 def query_stories(topic=None, priority=None, q=None, limit=200):
@@ -857,3 +888,94 @@ def obs60(query):
     return {"role": "OBS-60",
             "text": "Eagle, query not recognized. Try a region name "
                     "(e.g., 'Hormuz status'), 'global brief', or 'help'."}
+
+
+# ===========================================================================
+# GDELT — Global Database of Events, Language, and Tone (FREE, ~100k sources)
+# This single integration moves OBSIDIAN from "5 RSS feeds" to "monitoring
+# 100,000+ global news sources every 15 min." No API key required.
+# Reference: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+# ===========================================================================
+
+GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+
+
+def _gdelt_query(name, cfg):
+    """Build a GDELT DOC query from a hotspot config's keywords."""
+    kws = cfg.get("keywords", [])[:3]
+    if not kws:
+        return None
+    quoted = [f'"{k}"' if " " in k else k for k in kws]
+    return "(" + " OR ".join(quoted) + ")"
+
+
+def collect_gdelt(hotspots=None, max_per_hotspot=12):
+    """
+    Pull hotspot-targeted articles from GDELT's DOC 2.0 API.
+    Each chokepoint and conflict zone gets a recent-articles query.
+    Articles flow into the same `seen` table → automatically classified,
+    scored, mapped to regions, and surfaced everywhere.
+    Returns count of NEW articles ingested.
+    """
+    targets = hotspots if hotspots else (
+        list(CHOKEPOINTS.items()) + list(CONFLICT_ZONES.items())
+    )
+    conn = db()
+    new_count = 0
+    sources_seen = set()
+
+    for name, cfg in targets:
+        q = _gdelt_query(name, cfg)
+        if not q:
+            continue
+        params = {
+            "query": q,
+            "mode": "artlist",
+            "format": "json",
+            "maxrecords": str(max_per_hotspot),
+            "sort": "datedesc",
+            "timespan": "48h",
+        }
+        try:
+            r = requests.get(GDELT_DOC_URL, params=params, timeout=15,
+                             headers={"User-Agent": "OBSIDIAN/1.5"})
+            if r.status_code != 200:
+                continue
+            try:
+                data = r.json()
+            except Exception:
+                continue
+        except Exception:
+            continue
+
+        for art in data.get("articles", []) or []:
+            title = (art.get("title") or "").strip()
+            url = (art.get("url") or "").strip()
+            outlet = (art.get("domain") or "gdelt").strip()
+            if not title or not url:
+                continue
+            rid = url_id(url)
+            if conn.execute("SELECT 1 FROM seen WHERE id=?", (rid,)).fetchone():
+                continue
+            text = title
+            topic = classify(text)            # classify() returns a STRING
+            if not topic:
+                topic = cfg.get("region", "World")
+            priority, score = score_priority(text)
+            added = datetime.now(timezone.utc).isoformat()
+            try:
+                conn.execute(
+                    "INSERT INTO seen "
+                    "(id,title,domain,summary,url,source,added,priority,score) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    (rid, title, topic, title, url, outlet, added,
+                     priority, score)
+                )
+                new_count += 1
+                sources_seen.add(outlet)
+            except Exception:
+                pass
+
+    conn.commit()
+    conn.close()
+    return {"new": new_count, "outlets": len(sources_seen)}

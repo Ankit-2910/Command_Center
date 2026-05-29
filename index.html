@@ -9,34 +9,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
-  --black:#040810; --navy:#001E3C; --blue:#00BFFF; --purple:#6A00FF;
+  --black:#040810; --navy:#001E3C; --blue:#A855F7; --purple:#6A00FF;
   --ice:#eaf6ff; --red:#FF0033; --amber:#ffb020;
-  --panel:rgba(6,22,44,0.78); --panel-2:rgba(5,16,34,0.9);
-  --line:rgba(0,191,255,0.18); --line-b:rgba(0,191,255,0.45);
-  --txt:#cfe6f7; --txt-dim:#7ba6c8; --txt-faint:#456b8c;
-  --glow:rgba(0,191,255,0.35);
+  --panel:rgba(18,8,38,0.78); --panel-2:rgba(14,6,32,0.9);
+  --line:rgba(168,85,247,0.22); --line-b:rgba(168,85,247,0.5);
+  --txt:#d6c9ee; --txt-dim:#9b87c4; --txt-faint:#6a548c;
+  --glow:rgba(168,85,247,0.4);
   --orb:'Orbitron',sans-serif; --raj:'Rajdhani',sans-serif; --mono:'Share Tech Mono',monospace;
-  --accent:var(--blue); --accent-glow:rgba(0,191,255,0.6);
+  --accent:var(--blue); --accent-glow:rgba(168,85,247,0.65);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{background:#02060e;color:var(--txt);font-family:var(--raj);overflow-x:hidden;
   background-image:
-    radial-gradient(1200px 700px at 78% -8%,rgba(0,90,180,.22),transparent 55%),
+    radial-gradient(1200px 700px at 78% -8%,rgba(90,45,200,.22),transparent 55%),
     radial-gradient(900px 700px at 8% 115%,rgba(50,0,140,.16),transparent 55%),
     linear-gradient(180deg,#02060e,#040c18 60%,#02060e);
   background-attachment:fixed}
 #bg{position:fixed;inset:0;z-index:0;opacity:.5}
 .grid-ov{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.35;
-  background-image:linear-gradient(rgba(0,191,255,.05) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,191,255,.05) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(168,85,247,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(168,85,247,.05) 1px,transparent 1px);
   background-size:54px 54px;
   -webkit-mask-image:radial-gradient(circle at 50% 18%,#000,transparent 92%);
           mask-image:radial-gradient(circle at 50% 18%,#000,transparent 92%)}
 /* ===== glowing outer frame (Image 6 vibe) ===== */
 .frame{position:fixed;inset:9px;z-index:35;pointer-events:none;
-  border:1px solid rgba(0,191,255,.35);border-radius:4px;
-  box-shadow:0 0 28px rgba(0,191,255,.18),inset 0 0 60px rgba(0,40,90,.25)}
+  border:1px solid rgba(168,85,247,.35);border-radius:4px;
+  box-shadow:0 0 28px rgba(168,85,247,.18),inset 0 0 60px rgba(40,20,90,.25)}
 .frame i{position:absolute;width:22px;height:22px;border:2px solid var(--blue);
   filter:drop-shadow(0 0 6px var(--blue))}
 .frame .tl{top:-1px;left:-1px;border-right:0;border-bottom:0}
@@ -71,7 +71,7 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px
 .modes .m:hover{transform:scale(1.25)}
 .modes .m.on{box-shadow:0 0 10px currentColor;transform:scale(1.2)}
 .m[data-mode="stealth"]{color:#5a6b7d;background:#2a3744}
-.m[data-mode="scan"]{color:#00BFFF;background:#00BFFF}
+.m[data-mode="scan"]{color:#A855F7;background:#A855F7}
 .m[data-mode="threat"]{color:#FF0033;background:#FF0033}
 .m[data-mode="thinking"]{color:#6A00FF;background:#6A00FF}
 .m[data-mode="active"]{color:#28e0ff;background:#28e0ff}
@@ -111,8 +111,8 @@ main{padding:18px 24px 30px;min-width:0}
 .topics{list-style:none;display:flex;flex-direction:column;gap:1px;margin-bottom:22px}
 .topics li{display:flex;align-items:center;padding:7px 9px;cursor:pointer;font-size:13px;
   font-weight:600;color:var(--txt-dim);transition:.12s;border-left:2px solid transparent}
-.topics li:hover{background:rgba(0,191,255,.07);color:var(--ice)}
-.topics li.active{background:rgba(0,191,255,.12);color:var(--blue);border-left-color:var(--blue)}
+.topics li:hover{background:rgba(168,85,247,.07);color:var(--ice)}
+.topics li.active{background:rgba(168,85,247,.12);color:var(--blue);border-left-color:var(--blue)}
 .topics .ct{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--txt-faint)}
 .topics li.active .ct{color:var(--blue)}
 .alerts{border:1px solid rgba(255,0,51,.35);background:rgba(255,0,51,.06);padding:11px 12px;
@@ -154,7 +154,7 @@ main{padding:18px 24px 30px;min-width:0}
 .card.MEDIUM::before{background:var(--amber)}
 .card.LOW::before{background:#2b6da0}
 .card:hover{border-color:var(--line-b);background:linear-gradient(180deg,rgba(10,34,66,.96),rgba(6,20,42,.96));
-  transform:translateX(3px);box-shadow:0 0 22px rgba(0,191,255,.1)}
+  transform:translateX(3px);box-shadow:0 0 22px rgba(168,85,247,.1)}
 @keyframes emerge{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .card .ttl{font-family:var(--raj);font-size:15.5px;font-weight:700;color:#f2f9ff;
   text-decoration:none;line-height:1.34;display:block;letter-spacing:.005em;
@@ -162,7 +162,7 @@ main{padding:18px 24px 30px;min-width:0}
 .card .ttl:hover{color:var(--blue)}
 .card .meta{display:flex;align-items:center;gap:8px;margin:8px 0 7px;flex-wrap:wrap}
 .tag{font-family:var(--orb);font-size:8px;font-weight:700;letter-spacing:.1em;color:#7fd4ff;
-  border:1px solid rgba(0,191,255,.45);padding:3px 8px;border-radius:2px}
+  border:1px solid rgba(168,85,247,.45);padding:3px 8px;border-radius:2px}
 .badge{font-family:var(--orb);font-size:8px;font-weight:700;letter-spacing:.1em;padding:3px 9px;border-radius:2px}
 .badge.HIGH{background:var(--red);color:#fff}.badge.MEDIUM{background:var(--amber);color:#1a0f00}
 .badge.LOW{border:1px solid #2b6da0;color:#7ba6c8}
@@ -177,7 +177,7 @@ main{padding:18px 24px 30px;min-width:0}
 
 /* ===== real dotted world map ===== */
 .map{position:relative;height:258px;
-  background:radial-gradient(ellipse at 50% 45%,rgba(0,50,100,.35),rgba(2,10,24,.7));
+  background:radial-gradient(ellipse at 50% 45%,rgba(50,25,110,.35),rgba(2,10,24,.7));
   border:1px solid var(--line);overflow:hidden;
   clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
 .mapdots,.maparcs{position:absolute;inset:0;width:100%;height:100%}
@@ -190,7 +190,7 @@ main{padding:18px 24px 30px;min-width:0}
 @keyframes ripple{0%{transform:scale(.5);opacity:.9}100%{transform:scale(3.4);opacity:0}}
 .node .nl{position:absolute;left:13px;top:-5px;font-family:var(--mono);font-size:9px;
   color:#bcd8ee;white-space:nowrap;text-shadow:0 0 6px #02060e,0 0 6px #02060e}
-.arc{fill:none;stroke:rgba(0,191,255,.55);stroke-width:.5;stroke-dasharray:3 3;animation:flow 1.5s linear infinite}
+.arc{fill:none;stroke:rgba(168,85,247,.55);stroke-width:.5;stroke-dasharray:3 3;animation:flow 1.5s linear infinite}
 .arc.hot{stroke:rgba(255,60,90,.7)}
 @keyframes flow{to{stroke-dashoffset:-12}}
 
@@ -200,7 +200,7 @@ main{padding:18px 24px 30px;min-width:0}
 .rdot.HIGH{background:var(--red);box-shadow:0 0 8px var(--red)}
 .rdot.MEDIUM{background:var(--amber)}.rdot.LOW{background:var(--blue)}
 .rrow .rn{color:var(--txt);flex:1}
-.rrow .rbar{flex:1.4;height:4px;background:rgba(0,191,255,.1);position:relative}
+.rrow .rbar{flex:1.4;height:4px;background:rgba(168,85,247,.1);position:relative}
 .rrow .rbar i{position:absolute;left:0;top:0;height:100%;background:var(--blue)}
 .rrow.HIGH .rbar i{background:var(--red)}.rrow.MEDIUM .rbar i{background:var(--amber)}
 .rrow .rl{font-family:var(--orb);font-size:8px;font-weight:700;letter-spacing:.08em;width:46px;text-align:right}
@@ -229,29 +229,26 @@ main{padding:18px 24px 30px;min-width:0}
   background:rgba(2,8,18,.85);backdrop-filter:blur(3px)}
 .overlay.show{display:flex}
 .ldr{text-align:center}
-.ldr .ring{width:52px;height:52px;border:1px solid rgba(0,191,255,.25);border-top:1px solid var(--blue);
+.ldr .ring{width:52px;height:52px;border:1px solid rgba(168,85,247,.25);border-top:1px solid var(--blue);
   border-right:1px solid var(--blue);border-radius:50%;margin:0 auto 16px;animation:spin .7s linear infinite;box-shadow:0 0 20px var(--glow)}
 .ldr .msg{font-family:var(--orb);font-size:13px;font-weight:700;letter-spacing:.2em;color:var(--blue);text-shadow:0 0 16px var(--glow)}
 .ldr .sub{font-family:var(--mono);font-size:11px;color:var(--txt-dim);margin-top:8px;letter-spacing:.08em}
 ::-webkit-scrollbar{width:7px;height:7px}::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,191,255,.25)}::-webkit-scrollbar-thumb:hover{background:var(--blue)}
+::-webkit-scrollbar-thumb{background:rgba(168,85,247,.25)}::-webkit-scrollbar-thumb:hover{background:var(--blue)}
 
-.owl{width:100%;height:100%;overflow:visible}
-.owl .wing{fill:#0c1622;stroke:var(--accent);stroke-width:1.1;filter:drop-shadow(0 0 3px var(--accent-glow));transition:.5s}
-.owl .head{fill:#0e1a28;stroke:var(--accent);stroke-width:1.2;transition:.5s}
-.owl .eye{fill:var(--accent);filter:drop-shadow(0 0 6px var(--accent));transition:.5s}
-.owl .brow{stroke:var(--accent);stroke-width:1.4;fill:none;transition:.5s;filter:drop-shadow(0 0 4px var(--accent-glow))}
-.owl .ring{stroke:var(--accent);stroke-width:1;fill:none;opacity:0;stroke-dasharray:4 4}
-.sweepline{opacity:0}
-.logo-wrap.scan .sweepline{opacity:.7;animation:owlsweep 2.2s linear infinite}
-@keyframes owlsweep{0%{transform:translateX(-26px)}100%{transform:translateX(26px)}}
-.logo-wrap.thinking .ring{opacity:.8;animation:owlring 3s linear infinite}
-@keyframes owlring{to{transform:rotate(360deg)}}
-.logo-wrap.threat .eye{animation:eyepulse 1.6s ease-in-out infinite}
-@keyframes eyepulse{50%{filter:drop-shadow(0 0 14px var(--accent)) brightness(1.4)}}
-.logo-wrap.active .eye{animation:eyebreath 3s ease-in-out infinite}
-@keyframes eyebreath{50%{filter:drop-shadow(0 0 12px var(--accent))}}
-.logo-wrap.stealth .owl{opacity:.4}
+.logo-wrap{width:74px;height:54px;position:relative;flex-shrink:0;transition:.5s}
+.logo-img{width:100%;height:100%;object-fit:contain;display:block;
+  filter:drop-shadow(0 0 10px var(--accent-glow)) drop-shadow(0 0 22px var(--accent-glow));
+  transition:filter .6s}
+.logo-wrap.threat .logo-img{filter:drop-shadow(0 0 10px rgba(255,0,51,.7)) drop-shadow(0 0 24px rgba(255,0,51,.6));animation:logopulse 1.5s ease-in-out infinite}
+.logo-wrap.thinking .logo-img{filter:drop-shadow(0 0 12px rgba(192,38,211,.8)) drop-shadow(0 0 26px rgba(192,38,211,.6));animation:logobreath 2.4s ease-in-out infinite}
+.logo-wrap.scan .logo-img{animation:logobreath 1.6s ease-in-out infinite}
+.logo-wrap.active .logo-img{animation:logobreath 3.2s ease-in-out infinite}
+.logo-wrap.stealth .logo-img{filter:drop-shadow(0 0 4px rgba(90,107,125,.4));opacity:.5}
+@keyframes logopulse{50%{filter:drop-shadow(0 0 18px rgba(255,0,51,1)) drop-shadow(0 0 36px rgba(255,0,51,.8)) brightness(1.15)}}
+@keyframes logobreath{50%{filter:drop-shadow(0 0 16px var(--accent-glow)) drop-shadow(0 0 32px var(--accent-glow))}}
+.obs60-logo{width:38px;height:38px;object-fit:contain;display:block;
+  filter:drop-shadow(0 0 6px rgba(168,85,247,.8)) drop-shadow(0 0 12px rgba(168,85,247,.5))}
 
 /* ===== MARITIME & SUPPLY-CHAIN RISK ===== */
 .supply{margin-top:16px;background:var(--panel);border:1px solid var(--line);
@@ -280,7 +277,7 @@ main{padding:18px 24px 30px;min-width:0}
   color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .impact .ititle .ir{font-size:8px;padding:2px 7px;border-radius:2px}
 .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
-.flow .step{background:rgba(0,191,255,.07);border:1px solid var(--line);
+.flow .step{background:rgba(168,85,247,.07);border:1px solid var(--line);
   padding:8px 12px;font-size:11.5px;font-weight:600;color:var(--txt);
   display:flex;align-items:center;min-height:38px;flex:1;min-width:120px}
 .flow .step.final{background:rgba(255,0,51,.08);border-color:rgba(255,0,51,.3);color:#ffb0c0}
@@ -291,13 +288,13 @@ main{padding:18px 24px 30px;min-width:0}
 .sx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px}
 .sx{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600}
 .sx .sxn{color:var(--txt);width:96px}
-.sx .sxbar{flex:1;height:5px;background:rgba(0,191,255,.1);position:relative}
+.sx .sxbar{flex:1;height:5px;background:rgba(168,85,247,.1);position:relative}
 .sx .sxbar i{position:absolute;left:0;top:0;height:100%}
 .sx .sxl{font-family:var(--orb);font-size:8px;font-weight:700;width:62px;text-align:right;letter-spacing:.06em}
 
 /* ===== GLOBAL ALERT RIBBON ===== */
 .ribbon{position:sticky;top:62px;z-index:39;
-  background:linear-gradient(90deg,rgba(255,0,51,.18),rgba(255,122,26,.12) 50%,rgba(0,191,255,.10));
+  background:linear-gradient(90deg,rgba(255,0,51,.18),rgba(255,122,26,.12) 50%,rgba(168,85,247,.10));
   border-bottom:1px solid rgba(255,0,51,.3);padding:8px 28px;
   display:flex;align-items:center;gap:12px;
   font-family:var(--raj);font-size:12.5px;font-weight:600;color:var(--ice);
@@ -361,7 +358,7 @@ main{padding:18px 24px 30px;min-width:0}
 .dlevel.ELEVATED{background:var(--amber);color:#1a0f00}
 .dlevel.HIGH{background:#ff7a1a;color:#1a0f00}
 .dlevel.CRITICAL{background:var(--red);color:#fff}
-.aisum{background:rgba(0,191,255,.06);border:1px solid rgba(0,191,255,.3);padding:11px 13px;
+.aisum{background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.3);padding:11px 13px;
   font-size:13px;color:var(--ice);line-height:1.5;font-weight:500;border-left:3px solid var(--blue)}
 .aisum b{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.14em;color:var(--blue);display:block;margin-bottom:5px}
 .dsignals{display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto;padding-right:4px}
@@ -376,11 +373,11 @@ main{padding:18px 24px 30px;min-width:0}
 .dempty::before{content:"●";color:#23d18b;font-size:24px;display:block;margin-bottom:8px;text-shadow:0 0 14px #23d18b}
 
 /* ===== OBS-60 WIDGET ===== */
-.obs60-btn{position:fixed;bottom:20px;right:20px;z-index:70;width:56px;height:56px;border-radius:50%;
-  background:linear-gradient(135deg,var(--blue),var(--purple));border:none;cursor:pointer;
+.obs60-btn{position:fixed;bottom:20px;right:20px;z-index:70;width:60px;height:60px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#1a0d2e,#040810 75%);border:1.5px solid var(--accent);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 24px rgba(0,191,255,.5),0 4px 16px rgba(0,0,0,.4);transition:.2s}
-.obs60-btn:hover{transform:scale(1.06);box-shadow:0 0 34px rgba(0,191,255,.6)}
+  box-shadow:0 0 28px var(--accent-glow),0 4px 18px rgba(0,0,0,.5);transition:.2s;overflow:hidden}
+.obs60-btn:hover{transform:scale(1.08);box-shadow:0 0 40px var(--accent-glow),0 4px 18px rgba(0,0,0,.5)}
 .obs60-btn svg{width:32px;height:32px}
 .obs60-btn .dotn{position:absolute;top:4px;right:4px;width:11px;height:11px;border-radius:50%;
   background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1.2s infinite;display:none}
@@ -388,7 +385,7 @@ main{padding:18px 24px 30px;min-width:0}
 .obs60-panel{position:fixed;bottom:86px;right:20px;z-index:70;width:380px;max-width:calc(100vw - 28px);
   height:540px;max-height:calc(100vh - 110px);
   background:linear-gradient(180deg,rgba(3,12,26,.98),rgba(2,8,18,.98));border:1px solid var(--line-b);
-  display:none;flex-direction:column;box-shadow:0 8px 36px rgba(0,0,0,.6),0 0 28px rgba(0,191,255,.25);
+  display:none;flex-direction:column;box-shadow:0 8px 36px rgba(0,0,0,.6),0 0 28px rgba(168,85,247,.25);
   clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
 .obs60-panel.open{display:flex}
 .obs60-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -396,16 +393,16 @@ main{padding:18px 24px 30px;min-width:0}
 .obs60-sub{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.08em;margin-top:2px}
 .obs60-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
 .omsg{font-size:13px;line-height:1.5;padding:10px 12px;max-width:90%;font-weight:500;animation:emerge .25s ease both}
-.omsg.bot{background:rgba(0,191,255,.07);border:1px solid rgba(0,191,255,.25);border-left:3px solid var(--blue);
+.omsg.bot{background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.25);border-left:3px solid var(--blue);
   color:var(--ice);align-self:flex-start;border-radius:2px 8px 8px 8px}
 .omsg.user{background:rgba(106,0,255,.1);border:1px solid rgba(106,0,255,.3);
   color:var(--ice);align-self:flex-end;border-radius:8px 2px 8px 8px}
 .omsg.bot b.tag{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.14em;color:var(--blue);display:block;margin-bottom:4px}
 .obs60-chips{display:flex;gap:6px;padding:8px 14px;flex-wrap:wrap;border-top:1px solid var(--line)}
 .obs60-chip{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.08em;
-  color:var(--blue);background:rgba(0,191,255,.06);border:1px solid rgba(0,191,255,.3);
+  color:var(--blue);background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.3);
   padding:5px 10px;cursor:pointer;transition:.12s}
-.obs60-chip:hover{background:rgba(0,191,255,.15);color:var(--ice)}
+.obs60-chip:hover{background:rgba(168,85,247,.15);color:var(--ice)}
 .obs60-input{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
 .obs60-input input{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--ice);
   padding:9px 11px;font-family:var(--raj);font-size:13px;font-weight:500;outline:none}
@@ -457,21 +454,7 @@ main{padding:18px 24px 30px;min-width:0}
 <header>
   <div class="brand">
     <div class="logo-wrap active" id="logoWrap">
-      <svg class="owl" viewBox="0 0 120 90">
-        <g class="rings">
-          <circle class="ring" cx="44" cy="50" r="13" style="transform-origin:44px 50px"/>
-          <circle class="ring" cx="76" cy="50" r="13" style="transform-origin:76px 50px"/>
-        </g>
-        <path class="wing" d="M58 40 L18 26 L30 33 L14 33 L34 40 L16 44 L40 46 Z"/>
-        <path class="wing" d="M62 40 L102 26 L90 33 L106 33 L86 40 L104 44 L80 46 Z"/>
-        <path class="head" d="M44 30 L60 22 L76 30 L78 52 L60 66 L42 52 Z"/>
-        <path class="brow" d="M46 40 L54 44"/>
-        <path class="brow" d="M74 40 L66 44"/>
-        <path class="eye" d="M48 44 L57 46 L54 53 L47 51 Z"/>
-        <path class="eye" d="M72 44 L63 46 L66 53 L73 51 Z"/>
-        <path class="head" d="M58 54 L62 54 L60 62 Z"/>
-        <rect class="sweepline" x="40" y="20" width="2" height="50" fill="var(--accent)"/>
-      </svg>
+      <img src="/static/logo.jpg" alt="OBSIDIAN" class="logo-img">
     </div>
     <div class="brand-txt">
       <h1>OBSIDIAN</h1>
@@ -606,13 +589,7 @@ main{padding:18px 24px 30px;min-width:0}
 <!-- OBS-60 tactical intelligence assistant -->
 <button class="obs60-btn" id="obs60Btn" title="OBS-60 // Tactical Intelligence Assistant" aria-label="Open OBS-60">
   <span class="dotn"></span>
-  <svg viewBox="0 0 60 50" fill="none" aria-hidden="true">
-    <path d="M30 12 L42 8 L40 13 L46 13 L37 17 L48 18 L34 21 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
-    <path d="M30 12 L18 8 L20 13 L14 13 L23 17 L12 18 L26 21 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
-    <path d="M22 18 L30 14 L38 18 L39 30 L30 38 L21 30 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
-    <circle cx="25" cy="24" r="2.4" fill="#fff"/>
-    <circle cx="35" cy="24" r="2.4" fill="#fff"/>
-  </svg>
+  <img src="/static/logo.jpg" alt="" class="obs60-logo">
 </button>
 <div class="obs60-panel" id="obs60Panel" role="dialog" aria-modal="false">
   <div class="obs60-head">
@@ -643,8 +620,8 @@ main{padding:18px 24px 30px;min-width:0}
 </div>
 
 <script>
-const MODE_COLORS={stealth:["#5a6b7d","rgba(90,107,125,.4)"],scan:["#00BFFF","rgba(0,191,255,.6)"],
-  threat:["#FF0033","rgba(255,0,51,.6)"],thinking:["#6A00FF","rgba(106,0,255,.6)"],active:["#28e0ff","rgba(40,224,255,.6)"]};
+const MODE_COLORS={stealth:["#5a6b7d","rgba(90,107,125,.4)"],scan:["#A855F7","rgba(168,85,247,.6)"],
+  threat:["#FF0033","rgba(255,0,51,.6)"],thinking:["#C026D3","rgba(192,38,211,.65)"],active:["#A855F7","rgba(168,85,247,.65)"]};
 let autoLock=false;
 function setMode(m){const[a,g]=MODE_COLORS[m];
   document.documentElement.style.setProperty("--accent",a);
@@ -658,10 +635,10 @@ document.querySelectorAll("#modeSwitch .m").forEach(el=>el.onclick=()=>{autoLock
     pts=Array.from({length:64},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3}));}
   function draw(){x.clearRect(0,0,w,h);
     for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;
-      x.fillStyle="rgba(0,191,255,.5)";x.fillRect(p.x,p.y,1.5,1.5);}
+      x.fillStyle="rgba(168,85,247,.5)";x.fillRect(p.x,p.y,1.5,1.5);}
     for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
       const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.hypot(dx,dy);
-      if(d<130){x.strokeStyle="rgba(0,191,255,"+(.12*(1-d/130))+")";x.lineWidth=.5;
+      if(d<130){x.strokeStyle="rgba(168,85,247,"+(.12*(1-d/130))+")";x.lineWidth=.5;
         x.beginPath();x.moveTo(pts[i].x,pts[i].y);x.lineTo(pts[j].x,pts[j].y);x.stroke();}}
     requestAnimationFrame(draw);}
   init();addEventListener("resize",init);draw();})();
@@ -686,7 +663,7 @@ function drawDots(){const cv=document.getElementById("mapDots");const r=cv.getBo
   ctx.clearRect(0,0,cv.width,cv.height);
   for(let lon=-180;lon<=180;lon+=3.2)for(let lat=LAT_T;lat>=LAT_B;lat-=3.2){
     if(!inLand(lon,lat))continue;
-    ctx.fillStyle="rgba(0,150,220,0.3)";
+    ctx.fillStyle="rgba(140,75,220,0.3)";
     ctx.fillRect(projX(lon)*cv.width,projY(lat)*cv.height,1.7,1.7);}}
 function renderMap(pts,hot){
   const map=document.getElementById("map");
@@ -728,17 +705,17 @@ function renderCards(s,act){const days=act.map(a=>a.count),dl=s.today_delta;
   document.getElementById("cards").innerHTML=defs.map(c=>'<div class="scard '+c.cls+'"><div class="n">'+c.n+'</div><div class="k">'+c.k+'</div>'+
     (c.d!==null?'<div class="dl '+(c.d>=0?'up':'down')+'">'+(c.d>=0?'▲':'▼')+' '+Math.abs(c.d)+' vs yesterday</div>':'')+
     (c.spark?'<svg class="spark" viewBox="0 0 62 26"></svg>':'')+'</div>').join("");
-  document.querySelectorAll(".spark").forEach(sv=>sparkline(sv,days,"#00BFFF"));}
+  document.querySelectorAll(".spark").forEach(sv=>sparkline(sv,days,"#A855F7"));}
 function renderRegions(regs){const max=Math.max(1,...regs.map(r=>r.total));
   document.getElementById("rlist").innerHTML=regs.map(r=>'<div class="rrow '+r.level+'"><span class="rdot '+r.level+'"></span><span class="rn">'+esc(r.region)+'</span><span class="rbar"><i style="width:'+(r.total/max*100)+'%"></i></span><span class="rl '+r.level+'">'+r.level+'</span></div>').join("");}
 function renderActivity(act){const data=act.map(a=>a.count),max=Math.max(1,...data),W=240,H=110,pad=14;
   const xs=i=>pad+(data.length<2?0:i/(data.length-1))*(W-pad*2),ys=v=>H-pad-(v/max)*(H-pad*2);
   const line=data.map((v,i)=>xs(i)+","+ys(v)).join(" ");
   const area=pad+","+(H-pad)+" "+line+" "+(W-pad)+","+(H-pad);
-  const dots=data.map((v,i)=>'<circle cx="'+xs(i)+'" cy="'+ys(v)+'" r="2" fill="#00BFFF"/>').join("");
+  const dots=data.map((v,i)=>'<circle cx="'+xs(i)+'" cy="'+ys(v)+'" r="2" fill="#A855F7"/>').join("");
   const labs=act.map((a,i)=>'<text x="'+xs(i)+'" y="'+(H-2)+'" fill="#456b8c" font-size="6" text-anchor="middle" font-family="monospace">'+a.day+'</text>').join("");
-  document.getElementById("actChart").innerHTML='<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(0,191,255,.35)"/><stop offset="1" stop-color="rgba(0,191,255,0)"/></linearGradient></defs><polygon points="'+area+'" fill="url(#ag)"/><polyline points="'+line+'" fill="none" stroke="#00BFFF" stroke-width="1.5"/>'+dots+labs;}
-const SRC_COLORS=["#00BFFF","#6A00FF","#23d18b","#ffb020","#ff5d8f","#5a6b7d"];
+  document.getElementById("actChart").innerHTML='<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(168,85,247,.35)"/><stop offset="1" stop-color="rgba(168,85,247,0)"/></linearGradient></defs><polygon points="'+area+'" fill="url(#ag)"/><polyline points="'+line+'" fill="none" stroke="#A855F7" stroke-width="1.5"/>'+dots+labs;}
+const SRC_COLORS=["#A855F7","#6A00FF","#23d18b","#ffb020","#ff5d8f","#5a6b7d"];
 function renderDonut(sources){const total=sources.reduce((a,b)=>a+b.count,0)||1;let off=0;
   const segs=sources.map((s,i)=>{const dash=s.count/total*157.08;
     const seg='<circle cx="45" cy="45" r="25" fill="none" stroke="'+SRC_COLORS[i%6]+'" stroke-width="11" stroke-dasharray="'+dash+' 157.08" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 45 45)"/>';off+=dash;return seg;}).join("");
@@ -747,7 +724,7 @@ function renderDonut(sources){const total=sources.reduce((a,b)=>a+b.count,0)||1;
 function renderGauge(sent){const v=Math.max(-100,Math.min(100,sent.score)),cx=70,cy=72,r=55;
   const rad=((v+100)/200*180-180)*Math.PI/180,nx=cx+r*Math.cos(rad),ny=cy+r*Math.sin(rad);
   const col=v>12?"#23d18b":v<-12?"#FF0033":"#ffb020";
-  document.getElementById("gauge").innerHTML='<path d="M15 72 A55 55 0 0 1 125 72" fill="none" stroke="rgba(0,191,255,.15)" stroke-width="8"/><path d="M15 72 A55 55 0 0 1 125 72" fill="none" stroke="'+col+'" stroke-width="8" stroke-dasharray="'+((v+100)/200*172.7)+' 172.7" stroke-linecap="round"/><line x1="'+cx+'" y1="'+cy+'" x2="'+nx+'" y2="'+ny+'" stroke="'+col+'" stroke-width="2"/><circle cx="'+cx+'" cy="'+cy+'" r="4" fill="'+col+'"/>';
+  document.getElementById("gauge").innerHTML='<path d="M15 72 A55 55 0 0 1 125 72" fill="none" stroke="rgba(168,85,247,.15)" stroke-width="8"/><path d="M15 72 A55 55 0 0 1 125 72" fill="none" stroke="'+col+'" stroke-width="8" stroke-dasharray="'+((v+100)/200*172.7)+' 172.7" stroke-linecap="round"/><line x1="'+cx+'" y1="'+cy+'" x2="'+nx+'" y2="'+ny+'" stroke="'+col+'" stroke-width="2"/><circle cx="'+cx+'" cy="'+cy+'" r="4" fill="'+col+'"/>';
   const gv=document.getElementById("gaugeVal");gv.textContent=(v>0?"+":"")+v;gv.style.color=col;
   document.getElementById("gaugeLab").textContent=sent.label.toUpperCase();}
 
@@ -956,7 +933,10 @@ async function collect(){
   btn.classList.add("loading");ov.classList.add("show");
   document.getElementById("overlaySub").textContent="establishing secure link";
   try{const res=await api("/api/refresh",{method:"POST"});
-    document.getElementById("overlaySub").textContent="decrypted "+res.new+" new signals";
+    const msg = (res.gdelt && res.gdelt > 0)
+      ? "decrypted " + res.new + " signals (" + res.rss + " RSS + " + res.gdelt + " GDELT, " + res.gdelt_outlets + " outlets)"
+      : "decrypted " + res.new + " new signals";
+    document.getElementById("overlaySub").textContent = msg;
     await new Promise(r=>setTimeout(r,650));await loadDashboard();await loadStories();await loadSupply();await loadAlerts();hookClickables();
   }catch(e){document.getElementById("overlaySub").textContent="uplink failure — check server";await new Promise(r=>setTimeout(r,1400));}
   btn.classList.remove("loading");ov.classList.remove("show");
