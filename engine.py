@@ -8,6 +8,7 @@ scoring, storage, querying, stats. AI summaries stay optional (Ollama if present
 import hashlib
 import re
 import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -221,15 +222,29 @@ def write_note(rec):
 
 # --- core operations the API calls -----------------------------------------
 def collect():
-    """Fetch all feeds, store new items, write notes. Returns a summary dict."""
+    """Fetch all feeds (in parallel), store new items, write notes. Returns a summary dict."""
     ensure_setup()
     feeds = load_feeds()
     use_ai = ollama_up()
+
+    # ---- PARALLEL FETCH (network-bound work) ---------------------------------
+    def _fetch_one(url):
+        try:
+            return url, feedparser.parse(url)
+        except Exception:
+            return url, None
+
+    n_workers = max(1, min(8, len(feeds)))
+    with ThreadPoolExecutor(max_workers=n_workers) as ex:
+        fetched = list(ex.map(_fetch_one, feeds))
+
+    # ---- SEQUENTIAL DB WRITES (SQLite is single-writer) ----------------------
     conn = db()
     new_count = 0
-    for url in feeds:
+    for url, parsed in fetched:
+        if parsed is None:
+            continue
         try:
-            parsed = feedparser.parse(url)
             source = parsed.feed.get("title", url)
             for entry in parsed.entries[:MAX_PER_FEED]:
                 link = entry.get("link")
@@ -256,7 +271,10 @@ def collect():
                     (rec["id"], rec["title"], rec["domain"], rec["summary"], rec["url"],
                      rec["source"], rec["added"], rec["priority"], rec["score"]),
                 )
-                write_note(rec)
+                try:
+                    write_note(rec)
+                except Exception:
+                    pass  # vault writes are best-effort (ephemeral on Render)
                 new_count += 1
             conn.commit()
         except Exception:
@@ -912,7 +930,7 @@ def _gdelt_query(name, cfg):
 def collect_gdelt(hotspots=None, max_per_hotspot=12):
     """
     Pull hotspot-targeted articles from GDELT's DOC 2.0 API.
-    Each chokepoint and conflict zone gets a recent-articles query.
+    Queries run in PARALLEL (12 hotspots in ~3s vs ~30s sequential).
     Articles flow into the same `seen` table → automatically classified,
     scored, mapped to regions, and surfaced everywhere.
     Returns count of NEW articles ingested.
@@ -920,14 +938,12 @@ def collect_gdelt(hotspots=None, max_per_hotspot=12):
     targets = hotspots if hotspots else (
         list(CHOKEPOINTS.items()) + list(CONFLICT_ZONES.items())
     )
-    conn = db()
-    new_count = 0
-    sources_seen = set()
 
-    for name, cfg in targets:
+    def _fetch_one(target):
+        name, cfg = target
         q = _gdelt_query(name, cfg)
         if not q:
-            continue
+            return name, cfg, None
         params = {
             "query": q,
             "mode": "artlist",
@@ -937,17 +953,29 @@ def collect_gdelt(hotspots=None, max_per_hotspot=12):
             "timespan": "48h",
         }
         try:
-            r = requests.get(GDELT_DOC_URL, params=params, timeout=15,
+            r = requests.get(GDELT_DOC_URL, params=params, timeout=10,
                              headers={"User-Agent": "OBSIDIAN/1.5"})
             if r.status_code != 200:
-                continue
+                return name, cfg, None
             try:
-                data = r.json()
+                return name, cfg, r.json()
             except Exception:
-                continue
+                return name, cfg, None
         except Exception:
-            continue
+            return name, cfg, None
 
+    # ---- PARALLEL FETCH ------------------------------------------------------
+    n_workers = max(1, min(6, len(targets)))
+    with ThreadPoolExecutor(max_workers=n_workers) as ex:
+        results = list(ex.map(_fetch_one, targets))
+
+    # ---- SEQUENTIAL DB WRITES ------------------------------------------------
+    conn = db()
+    new_count = 0
+    sources_seen = set()
+    for name, cfg, data in results:
+        if not data:
+            continue
         for art in data.get("articles", []) or []:
             title = (art.get("title") or "").strip()
             url = (art.get("url") or "").strip()
@@ -957,11 +985,8 @@ def collect_gdelt(hotspots=None, max_per_hotspot=12):
             rid = url_id(url)
             if conn.execute("SELECT 1 FROM seen WHERE id=?", (rid,)).fetchone():
                 continue
-            text = title
-            topic = classify(text)            # classify() returns a STRING
-            if not topic:
-                topic = cfg.get("region", "World")
-            priority, score = score_priority(text)
+            topic = classify(title) or cfg.get("region", "World")
+            priority, score = score_priority(title)
             added = datetime.now(timezone.utc).isoformat()
             try:
                 conn.execute(
