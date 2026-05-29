@@ -532,8 +532,328 @@ def supply_chain():
                 sector_acc[s] = cur
 
     chokepoints.sort(key=lambda x: (_LVL[x["risk"]], x["event_count"]), reverse=True)
+    # also score conflict zones (post-hoc, simple loop)
+    conflict_zones = []
+    for name, cfg in CONFLICT_ZONES.items():
+        matched = []
+        for r in rows:
+            text = (r["title"] + " " + (r["summary"] or "")).lower()
+            if any(k in text for k in cfg["keywords"]):
+                matched.append(r)
+        cnt = len(matched)
+        high = sum(1 for m in matched if m["priority"] == "HIGH")
+        if high >= 2 or cnt >= 5:
+            risk = "CRITICAL"
+        elif high >= 1 or cnt >= 3:
+            risk = "HIGH"
+        elif cnt >= 1:
+            risk = "ELEVATED"
+        else:
+            risk = "LOW"
+        conflict_zones.append({
+            "name": name, "region": cfg["region"], "lat": cfg["lat"], "lon": cfg["lon"],
+            "risk": risk, "event_count": cnt, "sectors": cfg["sectors"],
+        })
+        if risk != "LOW":
+            for s in cfg["sectors"]:
+                cur = sector_acc.get(s, {"level": 0, "drivers": set()})
+                cur["level"] = max(cur["level"], _LVL[risk])
+                cur["drivers"].add(name)
+                sector_acc[s] = cur
+    conflict_zones.sort(key=lambda x: (_LVL[x["risk"]], x["event_count"]), reverse=True)
     sectors = [{"sector": s, "exposure": _LVL_NAME[v["level"]],
                 "drivers": sorted(v["drivers"])}
                for s, v in sorted(sector_acc.items(), key=lambda kv: -kv[1]["level"])]
     active = sum(1 for c in chokepoints if c["risk"] != "LOW")
-    return {"chokepoints": chokepoints, "sectors": sectors, "active": active}
+    return {"chokepoints": chokepoints, "conflict_zones": conflict_zones,
+            "sectors": sectors, "active": active}
+
+
+# ===========================================================================
+# CONFLICT ZONES + REGION INTELLIGENCE + GLOBAL ALERTS + OBS-60 ASSISTANT
+# ===========================================================================
+
+CONFLICT_ZONES = {
+    "Russia-Ukraine": {
+        "keywords": ["ukraine", "kyiv", "ukrainian", "russian forces",
+                     "putin", "zelensky", "kharkiv", "donbas"],
+        "commodities": ["Grain", "Fertilizer", "Energy"],
+        "sectors": ["Defense", "Energy", "Agriculture", "Food"],
+        "region": "Russia", "lat": 48.5, "lon": 35.0,
+        "chain": ["Active conflict", "Grain & energy export risk",
+                  "Sanctions pressure", "Global commodity volatility"],
+    },
+    "Israel-Iran": {
+        "keywords": ["israel", "iran", "gaza", "hezbollah", "hamas",
+                     "tehran", "netanyahu", "houthi"],
+        "commodities": ["Crude oil", "LNG"],
+        "sectors": ["Defense", "Energy", "Aviation"],
+        "region": "MiddleEast", "lat": 31.5, "lon": 35.5,
+        "chain": ["Direct & proxy escalation", "Regional spillover",
+                  "Oil shock risk", "Aviation rerouting"],
+    },
+    "Arctic Routes": {
+        "keywords": ["arctic", "northern sea route", "greenland", "svalbard"],
+        "commodities": ["LNG", "Oil"],
+        "sectors": ["Energy", "Shipping", "Defense"],
+        "region": "World", "lat": 78.0, "lon": 25.0,
+        "chain": ["Resource competition", "Strategic positioning",
+                  "Emerging shipping corridor", "Defense posture"],
+    },
+    "Indo-Pacific": {
+        "keywords": ["indo-pacific", "quad", "aukus", "first island chain",
+                     "philippines naval"],
+        "commodities": ["Semiconductors", "Container freight"],
+        "sectors": ["Defense", "Semiconductor", "Manufacturing"],
+        "region": "AsiaPacific", "lat": 15.0, "lon": 125.0,
+        "chain": ["Naval competition", "Trade-route risk",
+                  "Tech & chip exposure", "Alliance dynamics"],
+    },
+}
+
+
+def color_for_signals(n):
+    """Spec alert-color logic: 0=GREEN, 1-2=YELLOW, 3-5=ORANGE, 5+=RED."""
+    if n == 0:
+        return "GREEN"
+    if n <= 2:
+        return "YELLOW"
+    if n <= 5:
+        return "ORANGE"
+    return "RED"
+
+
+def _all_regions():
+    return {**CHOKEPOINTS, **CONFLICT_ZONES}
+
+
+def _match(cfg, rows):
+    out = []
+    for r in rows:
+        text = (r["title"] + " " + (r["summary"] or "")).lower()
+        if any(k in text for k in cfg["keywords"]):
+            out.append(r)
+    return out
+
+
+def region_intel(name):
+    """Deep intel pack for a chokepoint or conflict zone."""
+    cfg = _all_regions().get(name)
+    if not cfg:
+        return {"error": "unknown_region", "name": name}
+    conn = db()
+    rows = conn.execute(
+        "SELECT title,summary,url,priority,added,source FROM seen "
+        "ORDER BY added DESC LIMIT 800"
+    ).fetchall()
+    conn.close()
+    matched = _match(cfg, rows)
+    cnt = len(matched)
+    high = sum(1 for m in matched if m["priority"] == "HIGH")
+    if high >= 2 or cnt >= 6:
+        level = "CRITICAL"
+    elif high >= 1 or cnt >= 3:
+        level = "HIGH"
+    elif cnt >= 1:
+        level = "ELEVATED"
+    else:
+        level = "LOW"
+    prob = min(92, 5 + cnt * 4 + high * 12)
+    signals = [{"title": m["title"], "url": m["url"], "priority": m["priority"],
+                "date": (m["added"] or "")[:10], "source": m["source"] or ""}
+               for m in matched[:12]]
+    return {
+        "name": name,
+        "type": "chokepoint" if name in CHOKEPOINTS else "conflict_zone",
+        "signal_count": cnt, "high_count": high,
+        "color": color_for_signals(cnt), "level": level,
+        "escalation_probability": prob,
+        "chain": cfg.get("chain", []),
+        "commodities": cfg.get("commodities", []),
+        "sectors": cfg.get("sectors", []),
+        "region": cfg.get("region", ""),
+        "lat": cfg.get("lat"), "lon": cfg.get("lon"),
+        "signals": signals,
+        "ai_summary": _compose_summary(name, cfg, cnt, high, matched),
+    }
+
+
+def _compose_summary(name, cfg, cnt, high, matched):
+    """Data-driven tactical summary (rule-based; LLM-upgradeable later)."""
+    if cnt == 0:
+        return f"No current threat detected in {name}. Monitoring continues."
+    blob = " ".join((m["title"] + " " + (m["summary"] or "")).lower()
+                    for m in matched[:12])
+    themes = []
+    if any(k in blob for k in ["strike", "attack", "missile", "drone",
+                               "naval", "military", "troops"]):
+        themes.append("military activity")
+    if any(k in blob for k in ["tanker", "shipping", "freight", "reroute",
+                               "route", "insurance"]):
+        themes.append("shipping disruption")
+    if any(k in blob for k in ["oil", "crude", "lng", "gas", "energy",
+                               "refinery"]):
+        themes.append("energy market pressure")
+    if any(k in blob for k in ["grain", "food", "fertilizer", "wheat"]):
+        themes.append("food/agri impact")
+    if not themes:
+        themes = ["tension signals"]
+    severity = "Critical" if high >= 2 else ("Elevated" if high >= 1 else "Moderate")
+    sect = ", ".join(cfg.get("sectors", [])[:3]) or "regional exposure"
+    return (f"{severity} {' & '.join(themes[:2])} detected in {name}. "
+            f"Sectors at exposure: {sect}.")
+
+
+def global_alerts():
+    """Ribbon data: counts + highest-risk hotspot across chokepoints + conflict zones."""
+    hotspots = []
+    for nm in list(CHOKEPOINTS.keys()) + list(CONFLICT_ZONES.keys()):
+        ri = region_intel(nm)
+        hotspots.append({"name": nm, "level": ri["level"],
+                         "count": ri["signal_count"]})
+    crit = sum(1 for h in hotspots if h["level"] == "CRITICAL")
+    high = sum(1 for h in hotspots if h["level"] == "HIGH")
+    rank = {"CRITICAL": 3, "HIGH": 2, "ELEVATED": 1, "LOW": 0}
+    hotspots.sort(key=lambda h: (rank[h["level"]], h["count"]), reverse=True)
+    top = hotspots[0] if hotspots and hotspots[0]["level"] != "LOW" else None
+    if top:
+        ribbon = (f"{crit} CRITICAL · {high} HIGH · "
+                  f"Highest: {top['name']} ({top['level']})")
+    else:
+        ribbon = "All monitored hotspots nominal"
+    return {"critical": crit, "high": high,
+            "highest": top["name"] if top else None,
+            "highest_level": top["level"] if top else "LOW",
+            "ribbon": ribbon}
+
+
+# ===========================================================================
+# OBS-60: rule-based tactical assistant (LLM-upgradeable; see comment below)
+# ===========================================================================
+#
+# This responds using REAL data from the OBSIDIAN engine. To upgrade to a
+# true LLM later, replace the body of obs60() with a call to your LLM of
+# choice (Ollama local, or Anthropic Claude API), passing the live engine
+# context (dashboard(), supply_chain(), region_intel()) as system context.
+# The /api/obs60 endpoint signature does not change.
+
+_ALIAS = {
+    "hormuz": "Strait of Hormuz", "red sea": "Red Sea / Bab el-Mandeb",
+    "bab": "Red Sea / Bab el-Mandeb", "suez": "Suez Canal",
+    "taiwan": "Taiwan Strait", "panama": "Panama Canal",
+    "malacca": "Strait of Malacca", "black sea": "Black Sea",
+    "south china": "South China Sea", "ukraine": "Russia-Ukraine",
+    "russia-ukraine": "Russia-Ukraine", "iran": "Israel-Iran",
+    "israel": "Israel-Iran", "gaza": "Israel-Iran",
+    "arctic": "Arctic Routes", "indo-pacific": "Indo-Pacific",
+    "indopacific": "Indo-Pacific",
+}
+
+
+def obs60(query):
+    """Founder-level tactical intelligence assistant. Addresses user as 'Eagle'."""
+    from datetime import datetime
+    q = (query or "").strip()
+    ql = q.lower()
+    if not q:
+        return {"role": "OBS-60", "text": "Standing by, Eagle. Provide your query."}
+
+    # greeting
+    greetings = ["hi", "hello", "hey", "good morning", "good afternoon",
+                 "good evening", "namaste", "salaam", "kya haal"]
+    if any(ql == g or ql.startswith(g + " ") or ql.startswith(g + ",")
+           or ql == g + "!" for g in greetings):
+        sc = supply_chain()
+        crit_n = sum(1 for c in sc["chokepoints"] if c["risk"] == "CRITICAL")
+        high_n = sum(1 for c in sc["chokepoints"] if c["risk"] == "HIGH")
+        top = sc["chokepoints"][0] if sc["chokepoints"] else None
+        h = datetime.now().hour
+        greet = ("Good morning" if h < 12 else
+                 ("Good afternoon" if h < 17 else "Good evening"))
+        if crit_n and top:
+            return {"role": "OBS-60",
+                    "text": f"{greet}, Eagle. {crit_n} critical chokepoint"
+                            f"{'s' if crit_n > 1 else ''} active — highest: "
+                            f"{top['name']}. Awaiting your query."}
+        if high_n and top:
+            return {"role": "OBS-60",
+                    "text": f"{greet}, Eagle. {high_n} elevated chokepoint"
+                            f"{'s' if high_n > 1 else ''} under watch — top "
+                            f"concern: {top['name']}."}
+        return {"role": "OBS-60",
+                "text": f"{greet}, Eagle. All monitored chokepoints nominal. "
+                        f"Awaiting your query."}
+
+    # global brief / status
+    if any(k in ql for k in ["global brief", "global status", "brief",
+                             "situation report", "overview", "status",
+                             "kya haal", "kya chal"]):
+        # skip if a region was also mentioned (let region path handle)
+        if not any(k in ql for k in _ALIAS):
+            sc = supply_chain()
+            d = dashboard()
+            crit_n = sum(1 for c in sc["chokepoints"] if c["risk"] == "CRITICAL")
+            high_n = sum(1 for c in sc["chokepoints"] if c["risk"] == "HIGH")
+            top = sc["chokepoints"][0] if sc["chokepoints"] else None
+            sect_crit = [s["sector"] for s in sc["sectors"]
+                         if s["exposure"] == "CRITICAL"][:3]
+            parts = [f"Eagle, global picture: {d['stats']['high']} high-priority "
+                     f"signals across {d['stats']['topics']} sectors."]
+            if crit_n and top:
+                parts.append(f"{crit_n} chokepoint"
+                             f"{'s' if crit_n > 1 else ''} at CRITICAL — "
+                             f"top: {top['name']}.")
+            elif high_n and top:
+                parts.append(f"{high_n} chokepoint"
+                             f"{'s' if high_n > 1 else ''} elevated — "
+                             f"watch: {top['name']}.")
+            if sect_crit:
+                parts.append(f"Critical sector exposure: "
+                             f"{', '.join(sect_crit)}.")
+            return {"role": "OBS-60", "text": " ".join(parts)}
+
+    # region detection
+    hit = None
+    for k, v in _ALIAS.items():
+        if k in ql:
+            hit = v
+            break
+    if not hit:
+        for r in _all_regions().keys():
+            if r.lower() in ql:
+                hit = r
+                break
+    if hit:
+        ri = region_intel(hit)
+        if ri["signal_count"] == 0:
+            return {"role": "OBS-60",
+                    "text": f"Eagle, {hit} region nominal at present. No active "
+                            f"signals detected. Monitoring continues."}
+        parts = [f"Eagle, {hit}:"]
+        parts.append(f"Risk level {ri['level']}, escalation probability "
+                     f"{ri['escalation_probability']}%.")
+        parts.append(f"{ri['signal_count']} signal"
+                     f"{'s' if ri['signal_count'] > 1 else ''}, "
+                     f"{ri['high_count']} high-priority.")
+        if ri["sectors"]:
+            parts.append(f"Sectors exposed: {', '.join(ri['sectors'][:3])}.")
+        parts.append(ri["ai_summary"])
+        return {"role": "OBS-60", "text": " ".join(parts)}
+
+    # capabilities
+    if any(k in ql for k in ["help", "what can you", "capabilities", "kya kar"]):
+        return {"role": "OBS-60",
+                "text": "Eagle, I monitor 12 hotspots — 8 maritime chokepoints "
+                        "and 4 conflict zones. Ask about any region (Hormuz, "
+                        "Red Sea, Taiwan, Ukraine, Iran, Arctic, Indo-Pacific), "
+                        "request a 'global brief', or query sector exposure."}
+
+    # co-founder mention
+    if "rudra" in ql:
+        return {"role": "OBS-60",
+                "text": "RUDRA acknowledged. Co-founder access noted. "
+                        "Awaiting tactical query."}
+
+    return {"role": "OBS-60",
+            "text": "Eagle, query not recognized. Try a region name "
+                    "(e.g., 'Hormuz status'), 'global brief', or 'help'."}

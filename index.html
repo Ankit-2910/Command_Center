@@ -295,6 +295,125 @@ main{padding:18px 24px 30px;min-width:0}
 .sx .sxbar i{position:absolute;left:0;top:0;height:100%}
 .sx .sxl{font-family:var(--orb);font-size:8px;font-weight:700;width:62px;text-align:right;letter-spacing:.06em}
 
+/* ===== GLOBAL ALERT RIBBON ===== */
+.ribbon{position:sticky;top:62px;z-index:39;
+  background:linear-gradient(90deg,rgba(255,0,51,.18),rgba(255,122,26,.12) 50%,rgba(0,191,255,.10));
+  border-bottom:1px solid rgba(255,0,51,.3);padding:8px 28px;
+  display:flex;align-items:center;gap:12px;
+  font-family:var(--raj);font-size:12.5px;font-weight:600;color:var(--ice);
+  cursor:pointer;transition:.2s}
+.ribbon:hover{filter:brightness(1.15)}
+.ribbon .pulse{width:9px;height:9px;border-radius:50%;background:var(--red);
+  animation:rpulse 1.6s infinite}
+@keyframes rpulse{0%{box-shadow:0 0 0 0 rgba(255,0,51,.7)}70%{box-shadow:0 0 0 12px rgba(255,0,51,0)}100%{box-shadow:0 0 0 0 rgba(255,0,51,0)}}
+.ribbon .rlbl{font-family:var(--orb);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--red);margin-right:6px}
+.ribbon.nominal{background:rgba(35,209,139,.06);border-bottom-color:rgba(35,209,139,.25)}
+.ribbon.nominal .pulse{background:#23d18b;animation-name:gpulse}
+@keyframes gpulse{0%{box-shadow:0 0 0 0 rgba(35,209,139,.6)}70%{box-shadow:0 0 0 10px rgba(35,209,139,0)}100%{box-shadow:0 0 0 0 rgba(35,209,139,0)}}
+.ribbon.nominal .rlbl{color:#23d18b}
+
+/* ===== CLICKABLE CHOKEPOINT/CZ CARDS ===== */
+.choke{cursor:pointer}
+.choke:active{transform:scale(.98)}
+.cz-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:6px}
+.cz{background:var(--panel-2);border:1px solid var(--line);padding:10px 12px;cursor:pointer;
+  border-left:3px solid #2b6da0;transition:.15s;border-radius:0 4px 4px 0}
+.cz.ELEVATED{border-left-color:var(--amber)}
+.cz.HIGH{border-left-color:#ff7a1a}
+.cz.CRITICAL{border-left-color:var(--red);box-shadow:0 0 14px rgba(255,0,51,.15)}
+.cz:hover{border-color:var(--line-b)}
+.cz .czn{font-family:var(--orb);font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--ice)}
+.cz .czm{font-family:var(--mono);font-size:9.5px;color:var(--txt-faint);margin-top:5px;display:flex;justify-content:space-between;align-items:center}
+.cz .czl{font-family:var(--orb);font-size:8px;font-weight:700;letter-spacing:.1em;padding:2px 7px;border-radius:2px}
+.czl.LOW{border:1px solid #2b6da0;color:#7ba6c8}
+.czl.ELEVATED{background:var(--amber);color:#1a0f00}
+.czl.HIGH{background:#ff7a1a;color:#1a0f00}
+.czl.CRITICAL{background:var(--red);color:#fff}
+.node{cursor:pointer}
+
+/* ===== REGION DRAWER ===== */
+.drawer{position:fixed;top:0;right:-500px;width:460px;max-width:100vw;height:100vh;z-index:80;
+  background:linear-gradient(180deg,rgba(3,12,26,.98),rgba(2,8,18,.98));
+  border-left:1px solid var(--line-b);box-shadow:-20px 0 40px rgba(0,0,0,.5);
+  transition:right .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{right:0}
+.drawer-head{position:sticky;top:0;background:rgba(3,12,26,.98);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line-b);padding:16px 20px;z-index:1;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.drawer-head .dn{font-family:var(--orb);font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--ice);line-height:1.3}
+.drawer-head .dm{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:10.5px;color:var(--txt-dim);font-family:var(--mono);letter-spacing:.06em}
+.colordot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.colordot.GREEN{background:#23d18b;box-shadow:0 0 8px #23d18b}
+.colordot.YELLOW{background:#ffd84d;box-shadow:0 0 8px #ffd84d}
+.colordot.ORANGE{background:#ff7a1a;box-shadow:0 0 8px #ff7a1a}
+.colordot.RED{background:var(--red);box-shadow:0 0 10px var(--red)}
+.drawer-close{background:none;border:1px solid var(--line);color:var(--txt-dim);padding:5px 11px;
+  font-family:var(--orb);font-size:10px;cursor:pointer;letter-spacing:.1em;flex-shrink:0}
+.drawer-close:hover{color:var(--ice);border-color:var(--line-b)}
+.drawer-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.dpanel{background:rgba(8,22,42,.6);border:1px solid var(--line);padding:13px 15px}
+.dpanel .dt{font-family:var(--orb);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--blue);margin-bottom:8px}
+.dstat{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dstat .dsv{font-family:var(--orb);font-size:24px;font-weight:700;color:var(--ice);line-height:1}
+.dstat .dsk{font-family:var(--mono);font-size:9.5px;color:var(--txt-faint);margin-top:4px;letter-spacing:.06em}
+.dlevel{font-family:var(--orb);font-size:11px;font-weight:700;letter-spacing:.1em;padding:5px 11px;border-radius:2px;display:inline-block;margin-top:10px}
+.dlevel.LOW{border:1px solid #2b6da0;color:#7ba6c8}
+.dlevel.ELEVATED{background:var(--amber);color:#1a0f00}
+.dlevel.HIGH{background:#ff7a1a;color:#1a0f00}
+.dlevel.CRITICAL{background:var(--red);color:#fff}
+.aisum{background:rgba(0,191,255,.06);border:1px solid rgba(0,191,255,.3);padding:11px 13px;
+  font-size:13px;color:var(--ice);line-height:1.5;font-weight:500;border-left:3px solid var(--blue)}
+.aisum b{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.14em;color:var(--blue);display:block;margin-bottom:5px}
+.dsignals{display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto;padding-right:4px}
+.dsig{background:var(--panel-2);border:1px solid var(--line);padding:10px 12px;border-left:3px solid #2b6da0;transition:.12s}
+.dsig.HIGH{border-left-color:var(--red)}
+.dsig.MEDIUM{border-left-color:var(--amber)}
+.dsig:hover{border-color:var(--line-b)}
+.dsig-ttl{font-size:13px;font-weight:600;color:#f2f9ff;text-decoration:none;line-height:1.34;display:block;overflow-wrap:anywhere}
+.dsig-ttl:hover{color:var(--blue)}
+.dsig-m{display:flex;align-items:center;gap:7px;margin-top:5px;font-family:var(--mono);font-size:10px;color:var(--txt-faint);flex-wrap:wrap}
+.dempty{padding:32px 14px;text-align:center;color:var(--txt-faint);font-family:var(--orb);font-size:10px;letter-spacing:.14em}
+.dempty::before{content:"●";color:#23d18b;font-size:24px;display:block;margin-bottom:8px;text-shadow:0 0 14px #23d18b}
+
+/* ===== OBS-60 WIDGET ===== */
+.obs60-btn{position:fixed;bottom:20px;right:20px;z-index:70;width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--purple));border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 24px rgba(0,191,255,.5),0 4px 16px rgba(0,0,0,.4);transition:.2s}
+.obs60-btn:hover{transform:scale(1.06);box-shadow:0 0 34px rgba(0,191,255,.6)}
+.obs60-btn svg{width:32px;height:32px}
+.obs60-btn .dotn{position:absolute;top:4px;right:4px;width:11px;height:11px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 8px var(--red);animation:blink 1.2s infinite;display:none}
+.obs60-btn.has-alert .dotn{display:block}
+.obs60-panel{position:fixed;bottom:86px;right:20px;z-index:70;width:380px;max-width:calc(100vw - 28px);
+  height:540px;max-height:calc(100vh - 110px);
+  background:linear-gradient(180deg,rgba(3,12,26,.98),rgba(2,8,18,.98));border:1px solid var(--line-b);
+  display:none;flex-direction:column;box-shadow:0 8px 36px rgba(0,0,0,.6),0 0 28px rgba(0,191,255,.25);
+  clip-path:polygon(0 0,calc(100% - 13px) 0,100% 13px,100% 100%,13px 100%,0 calc(100% - 13px))}
+.obs60-panel.open{display:flex}
+.obs60-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.obs60-t{font-family:var(--orb);font-size:11px;font-weight:700;letter-spacing:.16em;color:var(--ice)}
+.obs60-sub{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.08em;margin-top:2px}
+.obs60-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+.omsg{font-size:13px;line-height:1.5;padding:10px 12px;max-width:90%;font-weight:500;animation:emerge .25s ease both}
+.omsg.bot{background:rgba(0,191,255,.07);border:1px solid rgba(0,191,255,.25);border-left:3px solid var(--blue);
+  color:var(--ice);align-self:flex-start;border-radius:2px 8px 8px 8px}
+.omsg.user{background:rgba(106,0,255,.1);border:1px solid rgba(106,0,255,.3);
+  color:var(--ice);align-self:flex-end;border-radius:8px 2px 8px 8px}
+.omsg.bot b.tag{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.14em;color:var(--blue);display:block;margin-bottom:4px}
+.obs60-chips{display:flex;gap:6px;padding:8px 14px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.obs60-chip{font-family:var(--orb);font-size:8.5px;font-weight:700;letter-spacing:.08em;
+  color:var(--blue);background:rgba(0,191,255,.06);border:1px solid rgba(0,191,255,.3);
+  padding:5px 10px;cursor:pointer;transition:.12s}
+.obs60-chip:hover{background:rgba(0,191,255,.15);color:var(--ice)}
+.obs60-input{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
+.obs60-input input{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--ice);
+  padding:9px 11px;font-family:var(--raj);font-size:13px;font-weight:500;outline:none}
+.obs60-input input:focus{border-color:var(--blue)}
+.obs60-input button{background:var(--blue);color:#021018;border:none;padding:0 14px;cursor:pointer;
+  font-family:var(--orb);font-size:10px;font-weight:700;letter-spacing:.12em}
+.obs60-input button:disabled{opacity:.5;cursor:wait}
+
 /* ===== RESPONSIVE ===== */
 @media(max-width:1180px){
   .content{grid-template-columns:1fr}
@@ -312,7 +431,12 @@ main{padding:18px 24px 30px;min-width:0}
   main{padding:14px 14px 24px}
   .frame{inset:5px}
   .choke-grid{grid-template-columns:repeat(2,1fr)}
+  .cz-row{grid-template-columns:repeat(2,1fr)}
   .sx-grid{grid-template-columns:1fr}
+  .ribbon{padding:8px 14px;font-size:11.5px}
+  .drawer{width:100%}
+  .obs60-panel{right:10px;width:calc(100vw - 20px);height:65vh;bottom:80px}
+  .obs60-btn{bottom:14px;right:14px}
 }
 @media(max-width:560px){
   .row2{grid-template-columns:1fr}
@@ -368,6 +492,12 @@ main{padding:18px 24px 30px;min-width:0}
     <button class="uplink" id="uplinkBtn"><span class="sp">◎</span>UPLINK</button>
   </div>
 </header>
+
+<div class="ribbon nominal" id="alertRibbon">
+  <span class="pulse"></span>
+  <span class="rlbl">GLOBAL ALERT</span>
+  <span id="ribbonText">Monitoring all hotspots…</span>
+</div>
 
 <div class="wrap">
   <aside>
@@ -446,6 +576,8 @@ main{padding:18px 24px 30px;min-width:0}
     <div class="supply">
       <div class="ph"><span class="t">Maritime &amp; Supply-Chain Risk</span><span class="x" id="supplyActive">0 active chokepoints</span></div>
       <div class="choke-grid" id="chokeGrid"></div>
+      <div class="ph" style="margin:6px 0 8px"><span class="t" style="font-size:10px">Active Conflict Zones</span></div>
+      <div class="cz-row" id="czGrid"></div>
       <div id="impactWrap"></div>
       <div class="ph" style="margin-top:6px"><span class="t" style="font-size:10px">Sector Exposure</span></div>
       <div class="sx-grid" id="sectorExposure"></div>
@@ -456,6 +588,50 @@ main{padding:18px 24px 30px;min-width:0}
 <div class="ticker">
   <span class="lbl"><span class="livedot"></span>LIVE INTELLIGENCE FEED</span>
   <div class="track" id="ticker"></div>
+</div>
+
+<!-- Region intelligence drawer -->
+<div class="drawer" id="drawer" role="dialog" aria-modal="true">
+  <div class="drawer-head">
+    <div>
+      <div class="dn" id="drawerName">—</div>
+      <div class="dm"><span class="colordot GREEN" id="drawerColor"></span>
+        <span id="drawerType">—</span> · <span id="drawerRegion">—</span></div>
+    </div>
+    <button class="drawer-close" id="drawerClose">CLOSE ✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<!-- OBS-60 tactical intelligence assistant -->
+<button class="obs60-btn" id="obs60Btn" title="OBS-60 // Tactical Intelligence Assistant" aria-label="Open OBS-60">
+  <span class="dotn"></span>
+  <svg viewBox="0 0 60 50" fill="none" aria-hidden="true">
+    <path d="M30 12 L42 8 L40 13 L46 13 L37 17 L48 18 L34 21 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
+    <path d="M30 12 L18 8 L20 13 L14 13 L23 17 L12 18 L26 21 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
+    <path d="M22 18 L30 14 L38 18 L39 30 L30 38 L21 30 Z" fill="rgba(2,8,20,.55)" stroke="#fff" stroke-width="1.3"/>
+    <circle cx="25" cy="24" r="2.4" fill="#fff"/>
+    <circle cx="35" cy="24" r="2.4" fill="#fff"/>
+  </svg>
+</button>
+<div class="obs60-panel" id="obs60Panel" role="dialog" aria-modal="false">
+  <div class="obs60-head">
+    <div><div class="obs60-t">OBS-60</div><div class="obs60-sub">Tactical Intelligence · Eagle access</div></div>
+    <button class="drawer-close" id="obs60Close" aria-label="Close OBS-60">✕</button>
+  </div>
+  <div class="obs60-msgs" id="obs60Msgs"></div>
+  <div class="obs60-chips">
+    <button class="obs60-chip" data-q="global brief">Global Brief</button>
+    <button class="obs60-chip" data-q="Hormuz status">Hormuz</button>
+    <button class="obs60-chip" data-q="Red Sea status">Red Sea</button>
+    <button class="obs60-chip" data-q="Taiwan status">Taiwan</button>
+    <button class="obs60-chip" data-q="Ukraine status">Ukraine</button>
+    <button class="obs60-chip" data-q="help">Help</button>
+  </div>
+  <div class="obs60-input">
+    <input id="obs60In" placeholder="Query OBS-60 (e.g. 'Hormuz situation')" autocomplete="off">
+    <button id="obs60Send">SEND</button>
+  </div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -523,6 +699,7 @@ function renderMap(pts,hot){
     const d=document.createElement("div");d.className="node"+(p.hot?" hot":"");
     d.style.left=xp+"%";d.style.top=yp+"%";
     d.innerHTML='<div class="pin"></div><div class="nl">'+p.region+' · '+p.count+'</div>';
+    d.dataset.region=p.region;
     map.appendChild(d);if(p.hot)hotNodes.push([xp,yp]);}
   // arcs between hotspots
   const svg=document.getElementById("mapArcs");
@@ -577,12 +754,17 @@ function renderGauge(sent){const v=Math.max(-100,Math.min(100,sent.score)),cx=70
 async function loadSupply(){
   const d=await api("/api/supply");
   document.getElementById("supplyActive").textContent=d.active+" active chokepoint"+(d.active===1?"":"s");
-  // chokepoint cards
+  // chokepoint cards (clickable)
   document.getElementById("chokeGrid").innerHTML=d.chokepoints.map(c=>
-    '<div class="choke '+c.risk+'"><div class="cn">'+esc(c.name)+'</div>'+
+    '<div class="choke '+c.risk+'" data-name="'+esc(c.name)+'"><div class="cn">'+esc(c.name)+'</div>'+
     '<div class="crow"><span class="crisk '+c.risk+'">'+c.risk+'</span>'+
     '<span class="ccount">'+c.event_count+' signal'+(c.event_count===1?"":"s")+'</span></div></div>').join("");
-  // impact chain for top active chokepoint
+  // conflict zone cards (clickable)
+  document.getElementById("czGrid").innerHTML=(d.conflict_zones||[]).map(c=>
+    '<div class="cz '+c.risk+'" data-name="'+esc(c.name)+'"><div class="czn">'+esc(c.name)+'</div>'+
+    '<div class="czm"><span class="czl '+c.risk+'">'+c.risk+'</span>'+
+    '<span>'+c.event_count+' signal'+(c.event_count===1?"":"s")+'</span></div></div>').join("");
+  // impact chain
   const top=d.chokepoints.find(c=>c.risk!=="LOW");
   const iw=document.getElementById("impactWrap");
   if(top){
@@ -608,7 +790,129 @@ async function loadSupply(){
   } else {
     sx.innerHTML='<div style="color:var(--txt-faint);font-size:12px">No sector exposure detected.</div>';
   }
+  hookClickables();
 }
+
+// ===== GLOBAL ALERT RIBBON =====
+async function loadAlerts(){
+  try{
+    const a=await api("/api/alerts");
+    const r=document.getElementById("alertRibbon");
+    document.getElementById("ribbonText").textContent=a.ribbon;
+    r.classList.toggle("nominal", a.critical===0 && a.high===0);
+    r.onclick=()=>{
+      if(a.highest) openDrawer(a.highest);
+      else document.querySelector(".supply").scrollIntoView({behavior:"smooth"});
+    };
+    const ob=document.getElementById("obs60Btn");
+    if(a.critical>0) ob.classList.add("has-alert"); else ob.classList.remove("has-alert");
+  }catch(e){}
+}
+
+// ===== REGION DRAWER =====
+const REGION_TO_HOTSPOT={"MiddleEast":"Strait of Hormuz","Russia":"Russia-Ukraine",
+  "China":"Taiwan Strait","AsiaPacific":"Indo-Pacific","Americas":"Panama Canal",
+  "Africa":"Suez Canal","Europe":"Suez Canal","UK":"Suez Canal","US":"Indo-Pacific",
+  "India":"Indo-Pacific","World":"Arctic Routes"};
+const drawer=document.getElementById("drawer");
+async function openDrawer(name){
+  if(!name)return;
+  drawer.classList.add("open");
+  document.getElementById("drawerName").textContent=name;
+  document.getElementById("drawerBody").innerHTML='<div class="dempty" style="color:var(--blue)">LOADING…</div>';
+  try{
+    const r=await api("/api/region?name="+encodeURIComponent(name));
+    if(r.error){
+      document.getElementById("drawerBody").innerHTML='<div class="dempty">UNKNOWN REGION</div>';
+      return;
+    }
+    document.getElementById("drawerColor").className="colordot "+r.color;
+    document.getElementById("drawerType").textContent=r.type==="chokepoint"?"MARITIME CHOKEPOINT":"CONFLICT ZONE";
+    document.getElementById("drawerRegion").textContent=r.region;
+    let body='';
+    if(r.signal_count===0){
+      body='<div class="dempty">NO CURRENT THREAT DETECTED<br><span style="font-size:11px;letter-spacing:.06em;color:var(--txt-faint);font-family:var(--raj);font-weight:500">Region nominal. Monitoring continues.</span></div>';
+      body+='<div class="dpanel"><div class="dt">SECTORS MONITORED</div>'+
+            '<div style="font-size:12.5px;color:var(--txt-dim);line-height:1.5;font-weight:500">'+
+            (r.sectors||[]).join(", ")+'</div></div>';
+      document.getElementById("drawerBody").innerHTML=body;
+      return;
+    }
+    const probCol=r.escalation_probability>60?"var(--red)":r.escalation_probability>30?"var(--amber)":"var(--blue)";
+    body+='<div class="dpanel"><div class="dstat">'+
+      '<div><div class="dsv">'+r.signal_count+'</div><div class="dsk">ACTIVE SIGNALS</div></div>'+
+      '<div><div class="dsv" style="color:'+probCol+'">'+r.escalation_probability+'%</div><div class="dsk">ESCALATION PROB.</div></div>'+
+      '</div><span class="dlevel '+r.level+'">'+r.level+'</span></div>';
+    body+='<div class="aisum"><b>OBS-60 TACTICAL SUMMARY</b>'+esc(r.ai_summary)+'</div>';
+    if(r.chain && r.chain.length){
+      const steps=r.chain.map((s,i)=>'<div class="step'+(i===r.chain.length-1?' final':'')+'">'+esc(s)+'</div>'+
+        (i<r.chain.length-1?'<div class="arr">▶</div>':'')).join("");
+      body+='<div class="dpanel"><div class="dt">IMPACT CHAIN</div><div class="flow">'+steps+'</div></div>';
+    }
+    body+='<div class="dpanel"><div class="dt">EXPOSURE</div>';
+    if(r.sectors && r.sectors.length) body+='<div style="font-size:12.5px;color:var(--txt-dim);font-weight:500;margin-bottom:8px"><b style="color:var(--blue);font-family:var(--orb);font-size:8.5px;letter-spacing:.1em;display:block;margin-bottom:3px">SECTORS</b>'+r.sectors.join(" · ")+'</div>';
+    if(r.commodities && r.commodities.length) body+='<div style="font-size:12.5px;color:var(--txt-dim);font-weight:500"><b style="color:var(--blue);font-family:var(--orb);font-size:8.5px;letter-spacing:.1em;display:block;margin-bottom:3px">COMMODITIES</b>'+r.commodities.join(" · ")+'</div>';
+    body+='</div>';
+    body+='<div class="dpanel"><div class="dt">RECENT SIGNALS ('+r.signal_count+')</div><div class="dsignals">';
+    body+=r.signals.map(s=>'<div class="dsig '+s.priority+'"><a class="dsig-ttl" href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.title)+'</a>'+
+      '<div class="dsig-m"><span class="badge '+s.priority+'" style="font-size:7.5px;padding:2px 6px">'+s.priority+'</span>'+
+      '<span>'+esc(s.source)+'</span><span>·</span><span>'+esc(s.date)+'</span></div></div>').join("");
+    body+='</div></div>';
+    document.getElementById("drawerBody").innerHTML=body;
+  }catch(e){
+    document.getElementById("drawerBody").innerHTML='<div class="dempty">DATA UNAVAILABLE</div>';
+  }
+}
+document.getElementById("drawerClose").onclick=()=>drawer.classList.remove("open");
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){drawer.classList.remove("open");document.getElementById("obs60Panel").classList.remove("open");}});
+
+function hookClickables(){
+  document.querySelectorAll(".choke,.cz").forEach(el=>{
+    if(el.dataset.hooked)return; el.dataset.hooked="1";
+    el.addEventListener("click",()=>openDrawer(el.dataset.name));
+  });
+  document.querySelectorAll("#map .node").forEach(el=>{
+    if(el.dataset.hooked)return; el.dataset.hooked="1";
+    el.addEventListener("click",()=>{
+      const reg=el.dataset.region; if(reg && REGION_TO_HOTSPOT[reg]) openDrawer(REGION_TO_HOTSPOT[reg]);
+    });
+  });
+}
+
+// ===== OBS-60 chat =====
+const obs60Panel=document.getElementById("obs60Panel");
+const obs60Msgs=document.getElementById("obs60Msgs");
+const obs60In=document.getElementById("obs60In");
+const obs60Send=document.getElementById("obs60Send");
+const obs60Btn=document.getElementById("obs60Btn");
+function obsAddMsg(role,text){
+  const div=document.createElement("div"); div.className="omsg "+role;
+  if(role==="bot") div.innerHTML='<b class="tag">OBS-60</b>'+esc(text);
+  else div.textContent=text;
+  obs60Msgs.appendChild(div); obs60Msgs.scrollTop=obs60Msgs.scrollHeight;
+}
+async function obsSend(q){
+  if(!q||!q.trim())return;
+  obsAddMsg("user",q); obs60In.value=""; obs60Send.disabled=true;
+  try{
+    const r=await fetch("/api/obs60",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({query:q})}).then(x=>x.json());
+    obsAddMsg("bot",r.text||"Standing by, Eagle.");
+  }catch(e){obsAddMsg("bot","Comms link unstable, Eagle. Retry.");}
+  obs60Send.disabled=false; obs60In.focus();
+}
+obs60Btn.onclick=()=>{
+  obs60Panel.classList.toggle("open");
+  if(obs60Panel.classList.contains("open")){
+    obs60Btn.classList.remove("has-alert");
+    if(!obs60Msgs.children.length) obsSend("hello");
+    setTimeout(()=>obs60In.focus(),60);
+  }
+};
+document.getElementById("obs60Close").onclick=()=>obs60Panel.classList.remove("open");
+obs60Send.onclick=()=>obsSend(obs60In.value);
+obs60In.addEventListener("keydown",e=>{if(e.key==="Enter")obsSend(obs60In.value);});
+document.querySelectorAll(".obs60-chip").forEach(c=>c.onclick=()=>obsSend(c.dataset.q));
 
 async function loadDashboard(){
   const d=await api("/api/dashboard");
@@ -653,7 +957,7 @@ async function collect(){
   document.getElementById("overlaySub").textContent="establishing secure link";
   try{const res=await api("/api/refresh",{method:"POST"});
     document.getElementById("overlaySub").textContent="decrypted "+res.new+" new signals";
-    await new Promise(r=>setTimeout(r,650));await loadDashboard();await loadStories();await loadSupply();
+    await new Promise(r=>setTimeout(r,650));await loadDashboard();await loadStories();await loadSupply();await loadAlerts();hookClickables();
   }catch(e){document.getElementById("overlaySub").textContent="uplink failure — check server";await new Promise(r=>setTimeout(r,1400));}
   btn.classList.remove("loading");ov.classList.remove("show");
   if(!autoLock) setMode("active");
@@ -665,7 +969,9 @@ document.getElementById("prioSeg").querySelectorAll("button").forEach(b=>b.oncli
 let tm;document.getElementById("searchBox").addEventListener("input",e=>{
   clearTimeout(tm);tm=setTimeout(()=>{state.q=e.target.value.trim();loadStories();},280);});
 addEventListener("resize",()=>{clearTimeout(window._mz);window._mz=setTimeout(drawDots,200);});
-setMode("active");loadDashboard();loadStories();loadSupply();
+setMode("active");loadDashboard();loadStories();loadSupply();loadAlerts();
+setInterval(loadAlerts,30000);
+setTimeout(hookClickables,900);
 </script>
 </body>
 </html>

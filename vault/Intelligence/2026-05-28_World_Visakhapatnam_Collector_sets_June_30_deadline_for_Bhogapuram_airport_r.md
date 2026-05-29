@@ -2,7 +2,7 @@
 title: "Visakhapatnam Collector sets June 30 deadline for Bhogapuram airport roads"
 topic: World
 priority: LOW
-date: 2026-05-28T11:07:34.647506+00:00
+date: 2026-05-28T19:00:23.707559+00:00
 url: https://www.thehindu.com/news/national/andhra-pradesh/visakhapatnam-collector-sets-june-30-deadline-for-bhogapuram-airport-roads/article71032566.ece
 tags: [intel, World, LOW]
 ---
