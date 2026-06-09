@@ -14,6 +14,7 @@ import base64
 import os
 import threading
 import webbrowser
+from routing_admin import admin_bp
 from datetime import timedelta
 from flask import render_template
 from auth import auth_bp
@@ -50,6 +51,7 @@ app.config.update(
 app.register_blueprint(auth_bp)
 app.register_blueprint(prefs_bp)
 app.register_blueprint(watch_bp)
+app.register_blueprint(admin_bp)
 
 _DASHBOARD_B64 = (
     "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0i"

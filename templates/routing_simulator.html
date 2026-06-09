@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OBSIDIAN // Routing Simulator</title>
+<style>
+  :root {
+    --bg:#0a0a0a; --panel:#141414; --border:#2a2a2a;
+    --text:#e8e8e8; --muted:#8a8a8a; --accent:#FFA500;
+    --critical:#ff3838; --ok:#28c76f; --warn:#ffd166;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono','Consolas',monospace; min-height:100vh; }
+  .topbar { border-bottom:1px solid var(--border); padding:14px 24px;
+    display:flex; justify-content:space-between; align-items:center; }
+  .topbar h1 { font-size:14px; letter-spacing:2px; margin:0; }
+  .topbar a { color:var(--accent); text-decoration:none; font-size:11px; margin-left:14px; }
+  .container { max-width:1280px; margin:0 auto; padding:24px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .panel { background:var(--panel); border:1px solid var(--border);
+    padding:20px; border-radius:4px; margin-bottom:16px; }
+  .panel h2 { font-size:12px; letter-spacing:2px; color:var(--accent);
+    margin:0 0 16px 0; border-bottom:1px solid var(--border);
+    padding-bottom:8px; text-transform:uppercase; }
+  .event-row { padding:10px; border:1px solid #1f1f1f; background:#0a0a0a;
+    margin-bottom:6px; cursor:pointer; border-radius:3px;
+    transition:all .15s; font-size:11px; }
+  .event-row:hover { border-color:var(--accent); }
+  .event-row.selected { border-color:var(--accent); background:#1a1207; }
+  .ev-severity { display:inline-block; padding:1px 7px; border-radius:2px;
+    font-weight:600; font-size:10px; margin-right:8px; }
+  .sev-critical { background:var(--critical); color:#fff; }
+  .sev-high { background:#ff8c00; color:#000; }
+  .sev-elevated { background:var(--warn); color:#000; }
+  .sev-low { background:#444; color:#ccc; }
+  .meta { color:var(--muted); font-size:10px; margin-top:4px; }
+  .btn { background:var(--accent); color:#000; border:none; padding:9px 16px;
+    font-family:inherit; font-size:11px; letter-spacing:1px; cursor:pointer;
+    border-radius:3px; text-transform:uppercase; font-weight:600; margin-right:8px; }
+  .btn:hover { background:#ffb733; }
+  .btn:disabled { background:#444; color:#888; cursor:not-allowed; }
+  .btn-ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .stat { background:#0a0a0a; border:1px solid var(--border);
+    padding:10px; border-radius:3px; text-align:center; }
+  .stat .num { font-size:22px; color:var(--accent); font-weight:600; }
+  .stat .lbl { font-size:9px; color:var(--muted); letter-spacing:1px; margin-top:3px; }
+  .decision-row { background:#0a0a0a; border:1px solid var(--border);
+    padding:10px; margin-bottom:6px; border-radius:3px; font-size:11px; }
+  .decision-row.queued { border-left:3px solid var(--ok); }
+  .decision-row.suppressed { border-left:3px solid #444; opacity:.7; }
+  .badge { display:inline-block; padding:1px 6px; border-radius:2px;
+    font-size:9px; letter-spacing:1px; margin-left:6px; }
+  .badge.queued { background:var(--ok); color:#000; }
+  .badge.suppressed { background:#444; color:#ccc; }
+  .badge.channel { background:var(--accent-dim,#5a3a00); color:var(--accent); }
+  pre { background:#000; color:#aaa; padding:10px; border-radius:3px;
+    font-size:10px; overflow-x:auto; white-space:pre-wrap;
+    border:1px solid #1a1a1a; margin:6px 0 0 0; max-height:200px;
+    overflow-y:auto; }
+  .empty { color:var(--muted); font-size:11px; padding:24px;
+    text-align:center; font-style:italic; }
+  .loading { color:var(--accent); font-size:11px; padding:16px;
+    text-align:center; }
+  label.cb { display:inline-flex; align-items:center; gap:6px;
+    font-size:10px; color:var(--muted); letter-spacing:1px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>OBSIDIAN // ROUTING SIMULATOR <span style="color:var(--muted)">— CAP 11 BRAIN</span></h1>
+  <div>
+    <a href="/">← COMMAND CENTER</a>
+    <a href="/settings">SETTINGS</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="grid">
+    <!-- LEFT: Events list -->
+    <div class="panel">
+      <h2>◎ RECENT EVENTS</h2>
+      <div style="margin-bottom:10px;">
+        <button class="btn btn-ghost" onclick="loadEvents()">↻ REFRESH</button>
+        <label class="cb" style="margin-left:10px;">
+          <input type="checkbox" id="dry-run" checked> DRY RUN MODE
+        </label>
+      </div>
+      <div id="events-list">
+        <div class="loading">Loading events...</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Selected event + controls -->
+    <div>
+      <div class="panel">
+        <h2>◎ SELECTED EVENT</h2>
+        <div id="selected-event">
+          <div class="empty">No event selected — pick one from the left.</div>
+        </div>
+        <div id="route-controls" style="display:none; margin-top:14px;">
+          <button class="btn" id="route-btn" onclick="triggerRouting()">
+            ▶ RUN ROUTING
+          </button>
+          <button class="btn btn-ghost" onclick="loadDeliveries()">
+            ↻ RELOAD HISTORICAL DECISIONS
+          </button>
+        </div>
+      </div>
+
+      <div class="panel" id="results-panel" style="display:none;">
+        <h2>◎ ROUTING DECISIONS</h2>
+        <div class="summary" id="summary-stats"></div>
+        <div id="decisions-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let selectedEvent = null;
+
+function severityClass(s) {
+  if (s >= 85) return "sev-critical";
+  if (s >= 70) return "sev-high";
+  if (s >= 50) return "sev-elevated";
+  return "sev-low";
+}
+
+async function loadEvents() {
+  $("events-list").innerHTML = '<div class="loading">Loading...</div>';
+  try {
+    const r = await fetch("/api/admin/recent-events?limit=30");
+    const data = await r.json();
+    if (!data.events || data.events.length === 0) {
+      $("events-list").innerHTML = '<div class="empty">No events in the database yet.</div>';
+      return;
+    }
+    $("events-list").innerHTML = data.events.map(e => `
+      <div class="event-row" data-id="${e.id}" onclick="selectEvent('${e.id}')">
+        <div>
+          <span class="ev-severity ${severityClass(e.severity)}">${e.severity}</span>
+          <strong>${escapeHtml(e.headline || "(no headline)")}</strong>
+        </div>
+        <div class="meta">${e.event_type || "—"} · ${e.geographic_scope || "—"} · ${new Date(e.detected_at).toLocaleString()}</div>
+      </div>
+    `).join("");
+  } catch (e) {
+    $("events-list").innerHTML = `<div class="empty">Failed: ${e.message}</div>`;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function selectEvent(id) {
+  document.querySelectorAll(".event-row").forEach(el => el.classList.remove("selected"));
+  const row = document.querySelector(`[data-id="${id}"]`);
+  if (row) row.classList.add("selected");
+
+  const r = await fetch("/api/admin/recent-events?limit=30");
+  const data = await r.json();
+  const ev = data.events.find(e => e.id === id);
+  if (!ev) return;
+
+  selectedEvent = ev;
+  $("selected-event").innerHTML = `
+    <div style="font-size:13px;line-height:1.6;">
+      <div style="margin-bottom:8px;">
+        <span class="ev-severity ${severityClass(ev.severity)}">${ev.severity}</span>
+        <strong>${escapeHtml(ev.headline)}</strong>
+      </div>
+      <div class="meta">ID: <code style="color:var(--accent)">${ev.id}</code></div>
+      <div class="meta">Type: ${ev.event_type || "—"}</div>
+      <div class="meta">Scope: ${ev.geographic_scope || "—"}</div>
+      <div class="meta">Detected: ${new Date(ev.detected_at).toLocaleString()}</div>
+    </div>
+  `;
+  $("route-controls").style.display = "block";
+  loadDeliveries();
+}
+
+async function triggerRouting() {
+  if (!selectedEvent) return;
+  $("route-btn").disabled = true;
+  $("route-btn").textContent = "ROUTING...";
+
+  const dryRun = $("dry-run").checked;
+  try {
+    const r = await fetch("/api/admin/route-event", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ event_id: selectedEvent.id, dry_run: dryRun })
+    });
+    const data = await r.json();
+    renderResults(data);
+  } catch (e) {
+    alert("Routing failed: " + e.message);
+  } finally {
+    $("route-btn").disabled = false;
+    $("route-btn").textContent = "▶ RUN ROUTING";
+  }
+}
+
+function renderResults(data) {
+  $("results-panel").style.display = "block";
+  $("summary-stats").innerHTML = `
+    <div class="stat"><div class="num">${data.users_evaluated || 0}</div><div class="lbl">USERS</div></div>
+    <div class="stat"><div class="num" style="color:var(--ok)">${data.deliveries_queued || 0}</div><div class="lbl">QUEUED</div></div>
+    <div class="stat"><div class="num" style="color:var(--muted)">${data.suppressions || 0}</div><div class="lbl">SUPPRESSED</div></div>
+    <div class="stat"><div class="num">${data.dry_run ? "DRY" : "LIVE"}</div><div class="lbl">MODE</div></div>
+  `;
+
+  const decisions = data.decisions || [];
+  if (decisions.length === 0) {
+    $("decisions-list").innerHTML = '<div class="empty">No decisions generated.</div>';
+    return;
+  }
+
+  $("decisions-list").innerHTML = decisions.map(d => `
+    <div class="decision-row ${d.status}">
+      <div>
+        <strong>${escapeHtml(d.user_email || "?")}</strong>
+        <span style="color:var(--muted);">(${d.user_role || "—"})</span>
+        <span class="badge ${d.status}">${d.status}</span>
+        ${d.channel !== "suppressed" ? `<span class="badge channel">${d.channel}</span>` : ""}
+        ${d.delivery_type ? `<span class="badge" style="background:#1a1a1a;color:var(--muted);">${d.delivery_type}</span>` : ""}
+      </div>
+      <pre>${escapeHtml(JSON.stringify(d.routing_log, null, 2))}</pre>
+    </div>
+  `).join("");
+}
+
+async function loadDeliveries() {
+  if (!selectedEvent) return;
+  const r = await fetch("/api/admin/deliveries/" + selectedEvent.id);
+  const data = await r.json();
+  if (!data.deliveries || data.deliveries.length === 0) {
+    $("results-panel").style.display = "none";
+    return;
+  }
+  // Re-render in the same shape as routing result
+  const fakeResult = {
+    users_evaluated: new Set(data.deliveries.map(d => d.email)).size,
+    deliveries_queued: data.deliveries.filter(d => d.status === "queued").length,
+    suppressions: data.deliveries.filter(d => d.status === "suppressed").length,
+    dry_run: false,
+    decisions: data.deliveries.map(d => ({
+      user_email: d.email, user_role: d.role,
+      channel: d.channel, delivery_type: d.delivery_type,
+      status: d.status, routing_log: d.routing_log
+    }))
+  };
+  renderResults(fakeResult);
+}
+
+loadEvents();
+</script>
+</body>
+</html>
