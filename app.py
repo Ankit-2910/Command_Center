@@ -13,6 +13,7 @@ import base64
 import os
 import threading
 import webbrowser
+from db import health_check
 
 from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 
@@ -950,6 +951,23 @@ from db import health_check
 @app.route("/healthz")
 def healthz():
     db_ok = health_check()
+    status = 200 if db_ok else 503
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db": "connected" if db_ok else "unreachable",
+        "version": "stage-0"
+    }, status
+# ============================================================
+# Stage 0 — Health check endpoint
+# ============================================================
+@app.route("/healthz")
+def healthz():
+    try:
+        from db import health_check
+        db_ok = health_check()
+    except Exception as e:
+        return {"status": "degraded", "db": "import_failed", "error": str(e)}, 503
+    
     status = 200 if db_ok else 503
     return {
         "status": "ok" if db_ok else "degraded",
