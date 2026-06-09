@@ -945,3 +945,14 @@ if __name__ == "__main__":
     print("  Keep this window OPEN. Close it to stop the server.\n")
     threading.Timer(1.2, open_browser).start()
     app.run(host="0.0.0.0", port=5000, debug=False)
+from db import health_check
+
+@app.route("/healthz")
+def healthz():
+    db_ok = health_check()
+    status = 200 if db_ok else 503
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db": "connected" if db_ok else "unreachable",
+        "version": "stage-0"
+    }, status
