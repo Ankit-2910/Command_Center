@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OBSIDIAN // Operator Settings</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --panel: #141414; --border: #2a2a2a;
+    --text: #e8e8e8; --muted: #8a8a8a; --accent: #FFA500;
+    --accent-dim: #5a3a00; --critical: #ff3838; --ok: #28c76f;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono','Consolas',monospace; min-height:100vh; }
+  .topbar { border-bottom:1px solid var(--border); padding:14px 24px;
+    display:flex; justify-content:space-between; align-items:center; }
+  .topbar h1 { font-size:16px; letter-spacing:2px; margin:0; }
+  .topbar a { color:var(--accent); text-decoration:none; font-size:12px; }
+  .container { max-width:880px; margin:0 auto; padding:32px 24px; }
+  .panel { background:var(--panel); border:1px solid var(--border);
+    padding:24px; margin-bottom:20px; border-radius:4px; }
+  .panel h2 { font-size:13px; letter-spacing:2px; color:var(--accent);
+    margin:0 0 18px 0; border-bottom:1px solid var(--border);
+    padding-bottom:10px; text-transform:uppercase; }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:11px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  input[type=text], input[type=email], input[type=time],
+  input[type=number], input[type=date], select {
+    width:100%; padding:9px 12px; background:#0a0a0a;
+    border:1px solid var(--border); color:var(--text);
+    font-family:inherit; font-size:13px; border-radius:3px; }
+  input:focus, select:focus { outline:none; border-color:var(--accent); }
+  .toggle-row { display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid #1a1a1a; }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-row span { font-size:13px; }
+  .switch { position:relative; display:inline-block; width:44px; height:22px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#2a2a2a;
+    transition:.2s; border-radius:22px; }
+  .slider:before { position:absolute; content:""; height:16px; width:16px;
+    left:3px; top:3px; background:var(--muted); transition:.2s; border-radius:50%; }
+  input:checked + .slider { background:var(--accent-dim); }
+  input:checked + .slider:before { transform:translateX(22px); background:var(--accent); }
+  .btn { background:var(--accent); color:#000; border:none; padding:10px 18px;
+    font-family:inherit; font-size:12px; letter-spacing:1px; cursor:pointer;
+    border-radius:3px; text-transform:uppercase; font-weight:600; }
+  .btn:hover { background:#ffb733; }
+  .btn-ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn-danger { background:var(--critical); color:#fff; }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .watch-item { display:flex; justify-content:space-between; align-items:center;
+    padding:10px; background:#0a0a0a; border:1px solid var(--border);
+    margin-bottom:8px; border-radius:3px; font-size:12px; }
+  .watch-item .meta { color:var(--muted); margin-left:10px; font-size:11px; }
+  .status { padding:8px 12px; border-radius:3px; font-size:11px;
+    margin-bottom:14px; display:none; }
+  .status.ok { background:rgba(40,199,111,.1); border:1px solid var(--ok); color:var(--ok); }
+  .status.err { background:rgba(255,56,56,.1); border:1px solid var(--critical); color:var(--critical); }
+  #login-gate { text-align:center; padding:60px 20px; }
+  #login-gate .panel { max-width:420px; margin:0 auto; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>OBSIDIAN // OPERATOR SETTINGS</h1>
+  <a href="/">← BACK TO COMMAND CENTER</a>
+</div>
+<div class="container">
+  <div id="login-gate" style="display:none;">
+    <div class="panel">
+      <h2>◎ CLAIM YOUR PROFILE</h2>
+      <p style="color:var(--muted);font-size:12px;">Identify yourself to OBSIDIAN. We use this to personalize intelligence delivery.</p>
+      <div class="field"><label>EMAIL</label><input id="claim-email" type="email" placeholder="you@company.com" /></div>
+      <div class="field"><label>NAME</label><input id="claim-name" type="text" placeholder="Ankit Dubey" /></div>
+      <div class="field"><label>ROLE</label>
+        <select id="claim-role">
+          <option value="analyst">Analyst</option>
+          <option value="ceo">CEO / President</option>
+          <option value="cfo">CFO</option>
+          <option value="coo">COO / VP Operations</option>
+          <option value="procurement">Procurement</option>
+          <option value="logistics">Logistics</option>
+          <option value="risk">Risk Analyst</option>
+        </select>
+      </div>
+      <button class="btn" onclick="claimProfile()">CLAIM PROFILE</button>
+      <div id="claim-status" class="status"></div>
+    </div>
+  </div>
+  <div id="settings-app" style="display:none;">
+    <div class="panel">
+      <h2>◎ OPERATOR IDENTITY</h2>
+      <div id="identity-display" style="font-size:13px;line-height:1.8;"></div>
+      <button class="btn btn-ghost" onclick="logout()" style="margin-top:14px;">LOGOUT</button>
+    </div>
+    <div class="panel">
+      <h2>◎ DELIVERY CHANNELS</h2>
+      <div class="toggle-row"><span>Email</span><label class="switch"><input type="checkbox" id="ch-email"><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Push Notifications</span><label class="switch"><input type="checkbox" id="ch-push"><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Slack (webhook URL required)</span><label class="switch"><input type="checkbox" id="ch-slack"><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Microsoft Teams</span><label class="switch"><input type="checkbox" id="ch-teams"><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>SMS (Enterprise tier)</span><label class="switch"><input type="checkbox" id="ch-sms"><span class="slider"></span></label></div>
+    </div>
+    <div class="panel">
+      <h2>◎ ROUTING RULES</h2>
+      <div class="field"><label>SEVERITY THRESHOLD — events below this go to digest only (0–100)</label><input type="number" id="severity-threshold" min="0" max="100" /></div>
+      <div class="row-2">
+        <div class="field"><label>QUIET HOURS START</label><input type="time" id="quiet-start" /></div>
+        <div class="field"><label>QUIET HOURS END</label><input type="time" id="quiet-end" /></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>MORNING DIGEST TIME</label><input type="time" id="morning-time" /></div>
+        <div class="field"><label>EVENING DIGEST TIME</label><input type="time" id="evening-time" /></div>
+      </div>
+      <div class="toggle-row"><span>Weekly Strategic Brief (Monday 8 AM)</span><label class="switch"><input type="checkbox" id="weekly-enabled"><span class="slider"></span></label></div>
+      <div class="toggle-row"><span>Vacation Mode (suppress non-critical)</span><label class="switch"><input type="checkbox" id="vacation-mode"><span class="slider"></span></label></div>
+      <button class="btn" onclick="savePreferences()" style="margin-top:14px;">SAVE PREFERENCES</button>
+      <div id="prefs-status" class="status"></div>
+    </div>
+    <div class="panel">
+      <h2>◎ WATCHLIST — TARGETING LAYER</h2>
+      <p style="color:var(--muted);font-size:11px;margin:0 0 14px;">Entities you watch. Intelligence matching these gets priority routing and lower severity thresholds.</p>
+      <div class="row-2">
+        <div class="field"><label>TYPE</label>
+          <select id="watch-type">
+            <option value="region">Region</option>
+            <option value="country">Country</option>
+            <option value="chokepoint">Chokepoint</option>
+            <option value="company">Company</option>
+            <option value="industry">Industry</option>
+            <option value="commodity">Commodity</option>
+            <option value="keyword">Keyword</option>
+          </select>
+        </div>
+        <div class="field"><label>PRIORITY (1–10)</label><input type="number" id="watch-priority" min="1" max="10" value="5" /></div>
+      </div>
+      <div class="field"><label>NAME (your label)</label><input type="text" id="watch-name" placeholder="e.g. Red Sea Trade" /></div>
+      <div class="field"><label>ENTITY VALUE (what to match)</label><input type="text" id="watch-value" placeholder="e.g. Red Sea" /></div>
+      <button class="btn" onclick="addWatchlist()">+ ADD TO WATCHLIST</button>
+      <div id="watch-status" class="status"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+      <div id="watch-list"></div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+function showStatus(elId, msg, type) {
+  const el = $(elId); el.textContent = msg; el.className = "status " + type;
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 4000);
+}
+async function bootstrap() {
+  const r = await fetch("/auth/me");
+  const data = await r.json();
+  if (data.authenticated) {
+    $("login-gate").style.display = "none";
+    $("settings-app").style.display = "block";
+    renderIdentity(data.user);
+    await loadPreferences();
+    await loadWatchlists();
+  } else {
+    $("login-gate").style.display = "block";
+    $("settings-app").style.display = "none";
+  }
+}
+function renderIdentity(u) {
+  $("identity-display").innerHTML = `
+    <div><span style="color:var(--muted)">EMAIL:</span> ${u.email}</div>
+    <div><span style="color:var(--muted)">NAME:</span> ${u.name}</div>
+    <div><span style="color:var(--muted)">ROLE:</span> ${u.role.toUpperCase()}</div>
+    <div><span style="color:var(--muted)">TIMEZONE:</span> ${u.timezone}</div>`;
+}
+async function claimProfile() {
+  const body = { email: $("claim-email").value.trim(), name: $("claim-name").value.trim(), role: $("claim-role").value };
+  const r = await fetch("/auth/claim", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (data.ok) { showStatus("claim-status", "PROFILE CLAIMED. INITIALIZING...", "ok"); setTimeout(bootstrap, 800); }
+  else { showStatus("claim-status", "ERROR: " + (data.error || "unknown"), "err"); }
+}
+async function logout() { await fetch("/auth/logout", {method:"POST"}); location.reload(); }
+async function loadPreferences() {
+  const r = await fetch("/api/preferences"); const data = await r.json();
+  if (!data.preferences) return;
+  const p = data.preferences;
+  $("ch-email").checked = p.channel_email; $("ch-push").checked = p.channel_push;
+  $("ch-slack").checked = p.channel_slack; $("ch-teams").checked = p.channel_teams;
+  $("ch-sms").checked = p.channel_sms; $("severity-threshold").value = p.severity_threshold;
+  $("quiet-start").value = p.quiet_hours_start; $("quiet-end").value = p.quiet_hours_end;
+  $("morning-time").value = p.morning_digest_time; $("evening-time").value = p.evening_digest_time;
+  $("weekly-enabled").checked = p.weekly_brief_enabled; $("vacation-mode").checked = p.vacation_mode;
+}
+async function savePreferences() {
+  const body = {
+    channel_email: $("ch-email").checked, channel_push: $("ch-push").checked,
+    channel_slack: $("ch-slack").checked, channel_teams: $("ch-teams").checked,
+    channel_sms: $("ch-sms").checked, severity_threshold: parseInt($("severity-threshold").value),
+    quiet_hours_start: $("quiet-start").value, quiet_hours_end: $("quiet-end").value,
+    morning_digest_time: $("morning-time").value, evening_digest_time: $("evening-time").value,
+    weekly_brief_enabled: $("weekly-enabled").checked, vacation_mode: $("vacation-mode").checked
+  };
+  const r = await fetch("/api/preferences", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (data.ok) showStatus("prefs-status", "PREFERENCES SAVED", "ok");
+  else showStatus("prefs-status", "SAVE FAILED: " + (data.error || ""), "err");
+}
+async function loadWatchlists() {
+  const r = await fetch("/api/watchlists"); const data = await r.json();
+  const container = $("watch-list");
+  if (!data.watchlists || data.watchlists.length === 0) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:12px;">No watchlist entries yet.</div>'; return;
+  }
+  container.innerHTML = data.watchlists.map(w => `
+    <div class="watch-item">
+      <div><strong>${w.name}</strong><span class="meta">[${w.entity_type}: ${w.entity_value}] · P${w.priority}</span></div>
+      <button class="btn btn-danger" style="padding:4px 10px;font-size:10px;" onclick="deleteWatch('${w.id}')">✕</button>
+    </div>`).join("");
+}
+async function addWatchlist() {
+  const body = { name: $("watch-name").value.trim(), entity_type: $("watch-type").value,
+    entity_value: $("watch-value").value.trim(), priority: parseInt($("watch-priority").value) };
+  const r = await fetch("/api/watchlists", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (data.ok) { showStatus("watch-status", "WATCHLIST ENTRY ADDED", "ok");
+    $("watch-name").value = ""; $("watch-value").value = ""; loadWatchlists();
+  } else { showStatus("watch-status", "ERROR: " + (data.error || ""), "err"); }
+}
+async function deleteWatch(id) {
+  if (!confirm("Remove this watchlist entry?")) return;
+  await fetch("/api/watchlists/" + id, { method: "DELETE" });
+  loadWatchlists();
+}
+bootstrap();
+</script>
+</body>
+</html>

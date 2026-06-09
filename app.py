@@ -9,13 +9,19 @@ next to this file, that is used instead.
 Run it:  python app.py    (your browser opens automatically)
 Keep this window OPEN while you use the dashboard. Close it to stop the server.
 """
+
 import base64
 import os
 import threading
 import webbrowser
+from datetime import timedelta
+from flask import render_template
+from auth import auth_bp
+from preferences import prefs_bp
+from watchlists import watch_bp
 from db import health_check
 
-from flask import Flask, Response, jsonify, request, send_file, send_from_directory
+from flask import Flask, Response, render_template, session, jsonify, request, send_file, send_from_directory
 
 import engine
 
@@ -27,6 +33,23 @@ if not os.path.isdir(_STATIC_DIR):
     if os.path.isdir(_alt):
         _STATIC_DIR = _alt
 app = Flask(__name__, static_folder=_STATIC_DIR, static_url_path="/static")
+
+# ──────────────────────────────────────────────────────────
+# Stage 1 — Session config + blueprint registration
+# ──────────────────────────────────────────────────────────
+app.config.update(
+    SECRET_KEY=os.environ["SECRET_KEY"],
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(
+        days=int(os.environ.get("SESSION_COOKIE_DAYS", 30))
+    ),
+)
+
+app.register_blueprint(auth_bp)
+app.register_blueprint(prefs_bp)
+app.register_blueprint(watch_bp)
 
 _DASHBOARD_B64 = (
     "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0i"
@@ -938,6 +961,11 @@ def _lan_ip():
 # ============================================================
 # Stage 0 — Health check endpoint (production)
 # ============================================================
+@app.route("/settings")
+def settings_page():
+    return render_template("settings.html")
+
+
 @app.route("/healthz")
 def healthz():
     """Database connectivity probe. Used by cron-job.org + monitoring."""
