@@ -46,20 +46,20 @@ def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
     
     # Insert batch first to get ID for tracking pixel
     with get_session() as s:
-        row = s.execute(text("""
-            INSERT INTO obs_digest_batches
-            (user_id, digest_type, delivery_ids, severity_max, event_count, subject_line)
-            VALUES
-            (:uid, :dtype, :dids, :smax, :cnt, :sub)
-            RETURNING id
-        """), {
-            "uid": digest["user_id"],
-            "dtype": digest_type,
-            "dids": digest["delivery_ids"],
-            "smax": digest["severity_max"],
-            "cnt": digest["event_count"],
-            "sub": digest["subject"][:255]
-        }).fetchone()
+       row = s.execute(text("""
+    INSERT INTO obs_digest_batches
+    (user_id, digest_type, delivery_ids, severity_max, event_count, subject_line)
+    VALUES
+    (:uid, :dtype, CAST(:dids AS uuid[]), :smax, :cnt, :sub)
+    RETURNING id
+"""), {
+    "uid": digest["user_id"],
+    "dtype": digest_type,
+    "dids": digest["delivery_ids"],
+    "smax": digest["severity_max"],
+    "cnt": digest["event_count"],
+    "sub": digest["subject"][:255]
+}).fetchone()
         batch_id = str(row.id)
     
     # Render HTML with batch_id for tracking pixel
