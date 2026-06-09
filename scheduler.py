@@ -99,16 +99,28 @@ def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
 # ──────────────────────────────────────────────────────────
 
 def process_pending_alerts():
-    """Find queued 'alert' deliveries with severity ≥ 70 → send immediately."""
+    """Find queued 'alert' deliveries with severity ≥ 70 → send immediately.
+    
+    Skips users with recent failed batches (likely permanent sandbox errors).
+    On sandbox rejection, auto-suppresses all this user's pending queued
+    deliveries to stop retry loop.
+    """
     try:
         with get_session() as s:
             rows = s.execute(text("""
-                SELECT DISTINCT user_id
-                FROM obs_deliveries
-                WHERE status = 'queued'
-                  AND channel = 'email'
-                  AND delivery_type = 'alert'
-                  AND severity >= 70
+                SELECT DISTINCT d.user_id
+                FROM obs_deliveries d
+                WHERE d.status = 'queued'
+                  AND d.channel = 'email'
+                  AND d.delivery_type = 'alert'
+                  AND d.severity >= 70
+                  AND NOT EXISTS (
+                      SELECT 1 FROM obs_digest_batches b
+                      WHERE b.user_id = d.user_id
+                        AND b.status = 'failed'
+                        AND b.retry_count >= 3
+                        AND b.queued_at >= NOW() - INTERVAL '24 hours'
+                  )
             """)).fetchall()
         
         user_ids = [str(r.user_id) for r in rows]
@@ -118,10 +130,23 @@ def process_pending_alerts():
         log.info(f"alerts_job | candidates={len(user_ids)}")
         for uid in user_ids:
             result = _send_digest_to_user(uid, digest_type="alert")
-            log.info(f"alerts_job | user={uid} | result={result.get('ok')} | reason={result.get('reason') or result.get('error')}")
+            log.info(f"alerts_job | user={uid} | ok={result.get('ok')} | reason={result.get('reason') or result.get('error')}")
+            
+            # If sandbox-rejected: suppress this user's remaining queued
+            # deliveries so we don't keep retrying. They'll auto-resume
+            # once domain is verified in Resend.
+            err = str(result.get("error") or "")
+            if not result.get("ok") and ("own email" in err or "testing emails" in err):
+                with get_session() as s:
+                    s.execute(text("""
+                        UPDATE obs_deliveries
+                        SET status = 'suppressed',
+                            routing_log = routing_log || '{"suppression_reason": "resend_sandbox_blocked"}'::jsonb
+                        WHERE user_id = :uid AND status = 'queued'
+                    """), {"uid": uid})
+                log.info(f"alerts_job | auto_suppressed_pending | user={uid}")
     except Exception as e:
         log.error(f"alerts_job_error | {e}")
-
 
 # ──────────────────────────────────────────────────────────
 # JOB 2: Process scheduled morning/evening digests (every 15 min)
