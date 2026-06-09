@@ -936,53 +936,28 @@ def _lan_ip():
         return "YOUR-PC-IP"
 
 # ============================================================
-# Stage 0 — Health check endpoint (DIAGNOSTIC MODE)
+# Stage 0 — Health check endpoint (production)
 # ============================================================
 @app.route("/healthz")
 def healthz():
-    """Database connectivity probe with full diagnostics."""
-    import os
-    from sqlalchemy import text
-    
-    diag = {
-        "version": "stage-0-diag",
-        "database_url_set": bool(os.environ.get("DATABASE_URL")),
-        "database_url_host": None,
-        "database_url_port": None,
-    }
-    
-    # Parse the URL to expose host/port WITHOUT leaking password
-    db_url = os.environ.get("DATABASE_URL", "")
-    if db_url:
-        try:
-            # postgresql://user:pass@host:port/db
-            after_at = db_url.split("@", 1)[-1]
-            host_port = after_at.split("/", 1)[0]
-            if ":" in host_port:
-                host, port = host_port.split(":", 1)
-                diag["database_url_host"] = host
-                diag["database_url_port"] = port.split("?")[0]
-            else:
-                diag["database_url_host"] = host_port
-        except Exception as e:
-            diag["url_parse_error"] = str(e)
-    
+    """Database connectivity probe."""
     try:
-        from db import engine
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT 1 AS ok, current_database() AS db, version() AS pg_version"))
-            row = result.fetchone()
-            diag["status"] = "ok"
-            diag["db"] = "connected"
-            diag["db_name"] = row.db
-            diag["pg_version"] = row.pg_version[:50]
-            return diag, 200
+        from db import health_check
+        db_ok = health_check()
     except Exception as e:
-        diag["status"] = "degraded"
-        diag["db"] = "unreachable"
-        diag["error_type"] = type(e).__name__
-        diag["error_message"] = str(e)[:500]
-        return diag, 503
+        return {
+            "status": "degraded",
+            "db": "import_failed",
+            "error": str(e)[:200],
+            "version": "stage-0"
+        }, 503
+
+    status_code = 200 if db_ok else 503
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db": "connected" if db_ok else "unreachable",
+        "version": "stage-0"
+    }, status_code
 if __name__ == "__main__":
     engine.ensure_setup()
     engine.db().close()
