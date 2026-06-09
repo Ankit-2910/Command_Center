@@ -935,7 +935,29 @@ def _lan_ip():
     except Exception:
         return "YOUR-PC-IP"
 
+# ============================================================
+# Stage 0 — Health check endpoint (single source of truth)
+# ============================================================
+@app.route("/healthz")
+def healthz():
+    """Database connectivity probe. Used by cron-job.org + monitoring."""
+    try:
+        from db import health_check
+        db_ok = health_check()
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "db": "import_failed",
+            "error": str(e),
+            "version": "stage-0"
+        }, 503
 
+    status_code = 200 if db_ok else 503
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db": "connected" if db_ok else "unreachable",
+        "version": "stage-0"
+    }, status_code
 if __name__ == "__main__":
     engine.ensure_setup()
     engine.db().close()
@@ -948,29 +970,4 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
 from db import health_check
 
-@app.route("/healthz")
-def healthz():
-    db_ok = health_check()
-    status = 200 if db_ok else 503
-    return {
-        "status": "ok" if db_ok else "degraded",
-        "db": "connected" if db_ok else "unreachable",
-        "version": "stage-0"
-    }, status
-# ============================================================
-# Stage 0 — Health check endpoint
-# ============================================================
-@app.route("/healthz")
-def healthz():
-    try:
-        from db import health_check
-        db_ok = health_check()
-    except Exception as e:
-        return {"status": "degraded", "db": "import_failed", "error": str(e)}, 503
-    
-    status = 200 if db_ok else 503
-    return {
-        "status": "ok" if db_ok else "degraded",
-        "db": "connected" if db_ok else "unreachable",
-        "version": "stage-0"
-    }, status
+
