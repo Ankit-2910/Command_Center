@@ -117,8 +117,13 @@
       </div>
       <div class="toggle-row"><span>Weekly Strategic Brief (Monday 8 AM)</span><label class="switch"><input type="checkbox" id="weekly-enabled"><span class="slider"></span></label></div>
       <div class="toggle-row"><span>Vacation Mode (suppress non-critical)</span><label class="switch"><input type="checkbox" id="vacation-mode"><span class="slider"></span></label></div>
-      <button class="btn" onclick="savePreferences()" style="margin-top:14px;">SAVE PREFERENCES</button>
-      <div id="prefs-status" class="status"></div>
+      <div id="autosave-indicator" style="margin-top:14px;font-size:11px;color:var(--muted);
+     letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px;">
+  <span id="autosave-dot" style="width:8px;height:8px;border-radius:50%;
+        background:var(--ok);display:inline-block;"></span>
+  <span id="autosave-text">All changes saved</span>
+</div>
+<div id="prefs-status" class="status"></div>
     </div>
     <div class="panel">
       <h2>◎ WATCHLIST — TARGETING LAYER</h2>
@@ -162,6 +167,8 @@ async function bootstrap() {
     renderIdentity(data.user);
     await loadPreferences();
     await loadWatchlists();
+    wireAutosave();              // ← NEW: activate autosave after load
+    setAutosaveState("saved");   // ← NEW: initial state
   } else {
     $("login-gate").style.display = "block";
     $("settings-app").style.display = "none";
@@ -193,20 +200,116 @@ async function loadPreferences() {
   $("morning-time").value = p.morning_digest_time; $("evening-time").value = p.evening_digest_time;
   $("weekly-enabled").checked = p.weekly_brief_enabled; $("vacation-mode").checked = p.vacation_mode;
 }
-async function savePreferences() {
-  const body = {
-    channel_email: $("ch-email").checked, channel_push: $("ch-push").checked,
-    channel_slack: $("ch-slack").checked, channel_teams: $("ch-teams").checked,
-    channel_sms: $("ch-sms").checked, severity_threshold: parseInt($("severity-threshold").value),
-    quiet_hours_start: $("quiet-start").value, quiet_hours_end: $("quiet-end").value,
-    morning_digest_time: $("morning-time").value, evening_digest_time: $("evening-time").value,
-    weekly_brief_enabled: $("weekly-enabled").checked, vacation_mode: $("vacation-mode").checked
-  };
-  const r = await fetch("/api/preferences", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
-  const data = await r.json();
-  if (data.ok) showStatus("prefs-status", "PREFERENCES SAVED", "ok");
-  else showStatus("prefs-status", "SAVE FAILED: " + (data.error || ""), "err");
+// ──────────────────────────────────────────────────────────
+// AUTO-SAVE ENGINE
+// Debounced preference saves. Triggers 800ms after last change.
+// Visual feedback via #autosave-indicator.
+// ──────────────────────────────────────────────────────────
+
+let autosaveTimer = null;
+let autosaveInFlight = false;
+
+function setAutosaveState(state) {
+  const dot = $("autosave-dot");
+  const text = $("autosave-text");
+  if (!dot || !text) return;
+
+  if (state === "saved") {
+    dot.style.background = "var(--ok)";
+    text.textContent = "All changes saved";
+    text.style.color = "var(--muted)";
+  } else if (state === "saving") {
+    dot.style.background = "var(--accent)";
+    text.textContent = "Saving...";
+    text.style.color = "var(--accent)";
+  } else if (state === "pending") {
+    dot.style.background = "#ffd166";
+    text.textContent = "Unsaved changes";
+    text.style.color = "#ffd166";
+  } else if (state === "error") {
+    dot.style.background = "var(--critical)";
+    text.textContent = "Save failed — will retry";
+    text.style.color = "var(--critical)";
+  }
 }
+
+function collectPreferences() {
+  return {
+    channel_email: $("ch-email").checked,
+    channel_push: $("ch-push").checked,
+    channel_slack: $("ch-slack").checked,
+    channel_teams: $("ch-teams").checked,
+    channel_sms: $("ch-sms").checked,
+    severity_threshold: parseInt($("severity-threshold").value) || 50,
+    quiet_hours_start: $("quiet-start").value,
+    quiet_hours_end: $("quiet-end").value,
+    morning_digest_time: $("morning-time").value,
+    evening_digest_time: $("evening-time").value,
+    weekly_brief_enabled: $("weekly-enabled").checked,
+    vacation_mode: $("vacation-mode").checked
+  };
+}
+
+async function flushPreferences() {
+  if (autosaveInFlight) return;
+  autosaveInFlight = true;
+  setAutosaveState("saving");
+
+  const body = collectPreferences();
+
+  try {
+    const r = await fetch("/api/preferences", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (data.ok) {
+      setAutosaveState("saved");
+    } else {
+      setAutosaveState("error");
+      console.error("Autosave error:", data);
+      // Retry once after 3s
+      setTimeout(() => flushPreferences(), 3000);
+    }
+  } catch (e) {
+    setAutosaveState("error");
+    console.error("Autosave network error:", e);
+    setTimeout(() => flushPreferences(), 3000);
+  } finally {
+    autosaveInFlight = false;
+  }
+}
+
+function schedulePreferenceSave() {
+  setAutosaveState("pending");
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(flushPreferences, 800);
+}
+
+function wireAutosave() {
+  const preferenceInputs = [
+    "ch-email", "ch-push", "ch-slack", "ch-teams", "ch-sms",
+    "severity-threshold", "quiet-start", "quiet-end",
+    "morning-time", "evening-time", "weekly-enabled", "vacation-mode"
+  ];
+  preferenceInputs.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    const eventName = (el.type === "checkbox") ? "change" : "input";
+    el.addEventListener(eventName, schedulePreferenceSave);
+  });
+}
+
+// Also save immediately before user leaves the page (safety net)
+window.addEventListener("beforeunload", () => {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    // Synchronous flush via sendBeacon (modern browsers)
+    const body = JSON.stringify(collectPreferences());
+    navigator.sendBeacon("/api/preferences", new Blob([body], {type: "application/json"}));
+  }
+});
 async function loadWatchlists() {
   const r = await fetch("/api/watchlists"); const data = await r.json();
   const container = $("watch-list");
