@@ -14,6 +14,7 @@ import base64
 import os
 import threading
 import webbrowser
+from scheduler import start_scheduler, _send_digest_to_user
 from routing_admin import admin_bp
 from datetime import timedelta
 from flask import render_template
@@ -21,9 +22,9 @@ from auth import auth_bp
 from preferences import prefs_bp
 from watchlists import watch_bp
 from db import health_check
-
 from flask import Flask, Response, render_template, session, jsonify, request, send_file, send_from_directory
-
+from sqlalchemy import text
+from db import get_session
 import engine
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +53,15 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(prefs_bp)
 app.register_blueprint(watch_bp)
 app.register_blueprint(admin_bp)
+# ──────────────────────────────────────────────────────────
+# Stage 3 — Start scheduler (gunicorn-safe)
+# ──────────────────────────────────────────────────────────
+import os as _os
+if _os.environ.get("RESEND_API_KEY"):
+    try:
+        start_scheduler()
+    except Exception as _e:
+        print(f"[SCHEDULER START FAIL] {_e}")
 
 _DASHBOARD_B64 = (
     "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0i"
@@ -967,7 +977,36 @@ def _lan_ip():
 def settings_page():
     return render_template("settings.html")
 
-
+@app.route("/api/admin/send-test-digest", methods=["POST"])
+def manual_test_digest():
+    """
+    Master-only: manually trigger a digest for one user.
+    Body: { "user_email": "...", "digest_type": "manual_test" }
+    """
+    from auth import current_user
+    if "user_id" not in session:
+        return {"error": "auth_required"}, 401
+    user = current_user()
+    MASTER_EMAILS = {"adi.obsidian@gmail.com", "ankitdubey.aitech@gmail.com"}
+    if not user or user["email"] not in MASTER_EMAILS:
+        return {"error": "admin_only"}, 403
+    
+    data = request.get_json(silent=True) or {}
+    target_email = (data.get("user_email") or "").strip().lower()
+    dtype = data.get("digest_type", "manual_test")
+    
+    if not target_email:
+        return {"error": "user_email_required"}, 400
+    
+    with get_session() as s:
+        row = s.execute(text("SELECT id FROM obs_users WHERE email = :e AND is_active = TRUE"),
+                        {"e": target_email}).fetchone()
+        if not row:
+            return {"error": "user_not_found"}, 404
+        uid = str(row.id)
+    
+    result = _send_digest_to_user(uid, digest_type=dtype)
+    return result
 @app.route("/healthz")
 def healthz():
     """Database connectivity probe. Used by cron-job.org + monitoring."""
