@@ -940,7 +940,7 @@ def _lan_ip():
 # ============================================================
 @app.route("/healthz")
 def healthz():
-    """Database connectivity probe."""
+    """Database connectivity probe. Used by cron-job.org + monitoring."""
     try:
         from db import health_check
         db_ok = health_check()
