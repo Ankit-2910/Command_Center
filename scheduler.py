@@ -33,6 +33,10 @@ scheduler = BackgroundScheduler(timezone="UTC")
 # CORE: send digest to a single user
 # ──────────────────────────────────────────────────────────
 
+# ──────────────────────────────────────────────────────────
+# CORE: send digest to a single user
+# ──────────────────────────────────────────────────────────
+
 def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
     """
     Builds and sends one digest. Returns send result dict.
@@ -40,28 +44,28 @@ def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
     digest = build_digest_for_user(user_id, digest_type=digest_type)
     if not digest:
         return {"ok": False, "reason": "no_pending_events"}
-    
+
     if quota_remaining() <= 0:
         return {"ok": False, "reason": "daily_quota_exhausted"}
-    
+
     # Insert batch first to get ID for tracking pixel
     with get_session() as s:
-       row = s.execute(text("""
-    INSERT INTO obs_digest_batches
-    (user_id, digest_type, delivery_ids, severity_max, event_count, subject_line)
-    VALUES
-    (:uid, :dtype, CAST(:dids AS uuid[]), :smax, :cnt, :sub)
-    RETURNING id
-"""), {
-    "uid": digest["user_id"],
-    "dtype": digest_type,
-    "dids": digest["delivery_ids"],
-    "smax": digest["severity_max"],
-    "cnt": digest["event_count"],
-    "sub": digest["subject"][:255]
-}).fetchone()
+        row = s.execute(text("""
+            INSERT INTO obs_digest_batches
+            (user_id, digest_type, delivery_ids, severity_max, event_count, subject_line)
+            VALUES
+            (:uid, :dtype, CAST(:dids AS uuid[]), :smax, :cnt, :sub)
+            RETURNING id
+        """), {
+            "uid": digest["user_id"],
+            "dtype": digest_type,
+            "dids": digest["delivery_ids"],
+            "smax": digest["severity_max"],
+            "cnt": digest["event_count"],
+            "sub": digest["subject"][:255]
+        }).fetchone()
         batch_id = str(row.id)
-    
+
     # Render HTML with batch_id for tracking pixel
     html_body = render_html_digest(
         user_name=digest["user_name"],
@@ -77,7 +81,7 @@ def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
         events=digest["events"],
         digest_type=digest_type
     )
-    
+
     result = send_batch(
         batch_id=batch_id,
         to_email=digest["user_email"],
@@ -85,13 +89,11 @@ def _send_digest_to_user(user_id: str, digest_type: str) -> dict:
         html_body=html_body,
         text_body=text_body
     )
-    
+
     result["batch_id"] = batch_id
     result["event_count"] = digest["event_count"]
     result["user_email"] = digest["user_email"]
     return result
-
-
 # ──────────────────────────────────────────────────────────
 # JOB 1: Process real-time alerts (severity ≥ HIGH, every 5 min)
 # ──────────────────────────────────────────────────────────
