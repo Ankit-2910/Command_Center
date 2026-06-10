@@ -987,7 +987,7 @@ def manual_test_digest():
     if "user_id" not in session:
         return {"error": "auth_required"}, 401
     user = current_user()
-    MASTER_EMAILS = {"adi.obsidian@gmail.com", "ankitdubey.aitech@gmail.com"}
+    MASTER_EMAILS = {"adi.obsdian@gmail.com", "ankitdubey.aitech@gmail.com"}
     if not user or user["email"] not in MASTER_EMAILS:
         return {"error": "admin_only"}, 403
     

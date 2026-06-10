@@ -17,7 +17,7 @@ admin_bp = Blueprint("routing_admin", __name__)
 
 # Master accounts that get admin access
 MASTER_EMAILS = {
-    "adi.obsidian@gmail.com",
+    "adi.obsdian@gmail.com",
     "ankitdubey.aitech@gmail.com"
 }
 
