@@ -101,3 +101,78 @@ def event_deliveries(event_id):
             items.append(d)
         
         return jsonify({"deliveries": items, "count": len(items)})
+    @admin_bp.route("/admin/engagement")
+@admin_required
+def engagement_page():
+    return render_template("engagement.html")
+
+
+@admin_bp.route("/api/admin/engagement-summary", methods=["GET"])
+@admin_required
+def engagement_summary():
+    """
+    Returns per-user engagement stats + recent batch-level detail.
+    """
+    with get_session() as s:
+        # Per-user rollup
+        user_rows = s.execute(text("""
+            SELECT 
+                u.email, u.role,
+                COUNT(b.id) AS total_sent,
+                COUNT(b.opened_at) AS total_opened,
+                COUNT(b.first_click_at) AS total_clicked,
+                MAX(b.sent_at) AS last_sent,
+                MAX(b.opened_at) AS last_opened
+            FROM obs_users u
+            LEFT JOIN obs_digest_batches b ON b.user_id = u.id AND b.status IN ('sent','delivered','opened')
+            WHERE u.is_active = TRUE
+            GROUP BY u.email, u.role
+            ORDER BY u.role
+        """)).fetchall()
+
+        users = []
+        for r in user_rows:
+            total_sent = r.total_sent or 0
+            total_opened = r.total_opened or 0
+            total_clicked = r.total_clicked or 0
+            users.append({
+                "email": r.email,
+                "role": r.role,
+                "total_sent": total_sent,
+                "total_opened": total_opened,
+                "total_clicked": total_clicked,
+                "open_rate": round(100 * total_opened / total_sent, 1) if total_sent else 0,
+                "click_rate": round(100 * total_clicked / total_sent, 1) if total_sent else 0,
+                "last_sent": r.last_sent.isoformat() if r.last_sent else None,
+                "last_opened": r.last_opened.isoformat() if r.last_opened else None,
+            })
+
+        # Recent batches (last 20)
+        batch_rows = s.execute(text("""
+            SELECT 
+                u.email, b.digest_type, b.subject_line, b.event_count,
+                b.severity_max, b.status, b.sent_at, b.opened_at, b.first_click_at
+            FROM obs_digest_batches b
+            JOIN obs_users u ON u.id = b.user_id
+            WHERE b.sent_at IS NOT NULL
+            ORDER BY b.sent_at DESC
+            LIMIT 20
+        """)).fetchall()
+
+        batches = []
+        for r in batch_rows:
+            batches.append({
+                "email": r.email,
+                "digest_type": r.digest_type,
+                "subject": r.subject_line,
+                "event_count": r.event_count,
+                "severity_max": r.severity_max,
+                "status": r.status,
+                "sent_at": r.sent_at.isoformat() if r.sent_at else None,
+                "opened_at": r.opened_at.isoformat() if r.opened_at else None,
+                "first_click_at": r.first_click_at.isoformat() if r.first_click_at else None,
+                "was_opened": r.opened_at is not None,
+                "was_clicked": r.first_click_at is not None,
+            })
+
+        return jsonify({"users": users, "recent_batches": batches})

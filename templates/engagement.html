@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OBSIDIAN // Engagement</title>
+<style>
+  :root {
+    --bg:#0a0a0a; --panel:#141414; --border:#2a2a2a;
+    --text:#e8e8e8; --muted:#8a8a8a; --accent:#FFA500;
+    --ok:#28c76f; --warn:#ffd166; --critical:#ff3838;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:'JetBrains Mono','Consolas',monospace; min-height:100vh; }
+  .topbar { border-bottom:1px solid var(--border); padding:14px 24px;
+    display:flex; justify-content:space-between; align-items:center; }
+  .topbar h1 { font-size:14px; letter-spacing:2px; margin:0; }
+  .topbar a { color:var(--accent); text-decoration:none; font-size:11px; margin-left:14px; }
+  .container { max-width:1100px; margin:0 auto; padding:24px; }
+  .panel { background:var(--panel); border:1px solid var(--border);
+    padding:20px; border-radius:4px; margin-bottom:20px; }
+  .panel h2 { font-size:12px; letter-spacing:2px; color:var(--accent);
+    margin:0 0 16px 0; border-bottom:1px solid var(--border);
+    padding-bottom:8px; text-transform:uppercase; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { text-align:left; color:var(--muted); font-size:10px; letter-spacing:1px;
+    text-transform:uppercase; padding:8px 10px; border-bottom:1px solid var(--border); }
+  td { padding:10px 10px; border-bottom:1px solid #1a1a1a; }
+  tr:hover td { background:#0f0f0f; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:2px;
+    font-size:10px; font-weight:600; letter-spacing:1px; }
+  .pill-ok { background:var(--ok); color:#000; }
+  .pill-warn { background:var(--warn); color:#000; }
+  .pill-bad { background:#333; color:var(--muted); }
+  .rate-bar { display:inline-block; width:60px; height:6px; background:#222;
+    border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .rate-fill { height:100%; background:var(--accent); }
+  .empty { color:var(--muted); font-size:12px; padding:20px; text-align:center; font-style:italic; }
+  .role-badge { font-size:9px; letter-spacing:1px; color:var(--muted);
+    border:1px solid var(--border); padding:1px 6px; border-radius:2px; margin-left:6px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>OBSIDIAN // ENGAGEMENT <span style="color:var(--muted)">— CAP 11 TELEMETRY</span></h1>
+  <div>
+    <a href="/">← COMMAND CENTER</a>
+    <a href="/admin/routing-simulator">ROUTING SIMULATOR</a>
+    <a href="/settings">SETTINGS</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="panel">
+    <h2>◎ PER-USER ENGAGEMENT</h2>
+    <div id="user-table"><div class="empty">Loading...</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>◎ RECENT DELIVERIES (LAST 20)</h2>
+    <div id="batch-table"><div class="empty">Loading...</div></div>
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function escapeHtml(s) {
+  return String(s ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function rateBar(pct, color) {
+  return `<span class="rate-bar"><span class="rate-fill" style="width:${pct}%;background:${color || 'var(--accent)'}"></span></span>${pct}%`;
+}
+
+function healthPill(rate) {
+  if (rate >= 60) return `<span class="pill pill-ok">HEALTHY</span>`;
+  if (rate >= 30) return `<span class="pill pill-warn">WATCH</span>`;
+  return `<span class="pill pill-bad">LOW</span>`;
+}
+
+async function load() {
+  const r = await fetch('/api/admin/engagement-summary');
+  const data = await r.json();
+
+  // Users table
+  if (!data.users || data.users.length === 0) {
+    $("user-table").innerHTML = '<div class="empty">No users found.</div>';
+  } else {
+    $("user-table").innerHTML = `
+      <table>
+        <tr>
+          <th>User</th><th>Role</th><th>Sent</th><th>Open Rate</th>
+          <th>Click Rate</th><th>Last Sent</th><th>Last Opened</th><th>Status</th>
+        </tr>
+        ${data.users.map(u => `
+          <tr>
+            <td>${escapeHtml(u.email)}</td>
+            <td><span class="role-badge">${escapeHtml(u.role?.toUpperCase())}</span></td>
+            <td>${u.total_sent}</td>
+            <td>${rateBar(u.open_rate)}</td>
+            <td>${rateBar(u.click_rate, '#888')}</td>
+            <td>${fmtDate(u.last_sent)}</td>
+            <td>${fmtDate(u.last_opened)}</td>
+            <td>${u.total_sent > 0 ? healthPill(u.open_rate) : '<span class="pill pill-bad">NO DATA</span>'}</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
+  }
+
+  // Batches table
+  if (!data.recent_batches || data.recent_batches.length === 0) {
+    $("batch-table").innerHTML = '<div class="empty">No deliveries yet.</div>';
+  } else {
+    $("batch-table").innerHTML = `
+      <table>
+        <tr>
+          <th>User</th><th>Type</th><th>Subject</th><th>Events</th>
+          <th>Sent</th><th>Opened</th><th>Clicked</th>
+        </tr>
+        ${data.recent_batches.map(b => `
+          <tr>
+            <td>${escapeHtml(b.email)}</td>
+            <td>${escapeHtml(b.digest_type)}</td>
+            <td>${escapeHtml((b.subject || '').slice(0, 50))}</td>
+            <td>${b.event_count}</td>
+            <td>${fmtDate(b.sent_at)}</td>
+            <td>${b.was_opened ? '✅ ' + fmtDate(b.opened_at) : '—'}</td>
+            <td>${b.was_clicked ? '✅ ' + fmtDate(b.first_click_at) : '—'}</td>
+          </tr>
+        `).join("")}
+      </table>
+    `;
+  }
+}
+
+load();
+setInterval(load, 30000); // auto-refresh every 30s
+</script>
+</body>
+</html>

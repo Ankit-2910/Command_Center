@@ -25,6 +25,7 @@ from db import health_check
 from flask import Flask, Response, render_template, session, jsonify, request, send_file, send_from_directory
 from sqlalchemy import text
 from db import get_session
+from tracking import tracking_bp
 import engine
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,6 +54,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(prefs_bp)
 app.register_blueprint(watch_bp)
 app.register_blueprint(admin_bp)
+app.register_blueprint(tracking_bp)
 # ──────────────────────────────────────────────────────────
 # Stage 3 — Start scheduler (gunicorn-safe)
 # ──────────────────────────────────────────────────────────

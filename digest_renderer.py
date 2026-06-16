@@ -9,6 +9,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from sqlalchemy import text
 from db import get_session
+from urllib.parse import quote
+
+def _tracked_link(batch_id: str, target_url: str) -> str:
+    """Wraps a URL with click-tracking redirect."""
+    return f"{APP_BASE_URL}/api/email/track-click/{batch_id}?to={quote(target_url, safe='')}"
 
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "https://command-center-jst4.onrender.com")
 
@@ -226,7 +231,7 @@ def render_html_digest(
                 </div>
                 {wl_html}
                 <div style="margin-top:12px;">
-                    <a href="{APP_BASE_URL}/?event={ev.get('event_id')}"
+                    <a href="{_tracked_link(batch_id, f'{APP_BASE_URL}/?event={ev.get("event_id")}')}"
                        style="color:#FFA500;text-decoration:none;font-size:11px;
                               letter-spacing:1px;font-family:monospace;
                               border:1px solid #FFA500;padding:4px 10px;
@@ -317,8 +322,8 @@ def render_html_digest(
       <!-- CTA FOOTER -->
       <tr><td style="padding:24px;text-align:center;background:#0a0a0a;
                      border-top:1px solid #2a2a2a;">
-        <a href="{APP_BASE_URL}/"
-           style="display:inline-block;background:#FFA500;color:#000;
+        <a href="{_tracked_link(batch_id, f'{APP_BASE_URL}/')}"
+   style="display:inline-block;background:#FFA500;color:#000;
                   padding:12px 28px;text-decoration:none;font-weight:600;
                   letter-spacing:2px;font-size:11px;border-radius:3px;
                   font-family:monospace;">
@@ -326,9 +331,9 @@ def render_html_digest(
         </a>
         <div style="margin-top:14px;font-family:monospace;font-size:10px;
                     color:#666;letter-spacing:1px;">
-          <a href="{APP_BASE_URL}/settings" style="color:#666;text-decoration:none;">
-            ◎ MANAGE PREFERENCES
-          </a>
+          <a href="{_tracked_link(batch_id, f'{APP_BASE_URL}/settings')}" style="color:#666;text-decoration:none;">
+  ◎ MANAGE PREFERENCES
+</a>
         </div>
       </td></tr>
 
