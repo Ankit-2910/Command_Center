@@ -979,36 +979,7 @@ def _lan_ip():
 def settings_page():
     return render_template("settings.html")
 
-@app.route("/api/admin/send-test-digest", methods=["POST"])
-def manual_test_digest():
-    """
-    Master-only: manually trigger a digest for one user.
-    Body: { "user_email": "...", "digest_type": "manual_test" }
-    """
-    from auth import current_user
-    if "user_id" not in session:
-        return {"error": "auth_required"}, 401
-    user = current_user()
-    MASTER_EMAILS = {"adi.obsdian@gmail.com", "ankitdubey.aitech@gmail.com"}
-    if not user or user["email"] not in MASTER_EMAILS:
-        return {"error": "admin_only"}, 403
-    
-    data = request.get_json(silent=True) or {}
-    target_email = (data.get("user_email") or "").strip().lower()
-    dtype = data.get("digest_type", "manual_test")
-    
-    if not target_email:
-        return {"error": "user_email_required"}, 400
-    
-    with get_session() as s:
-        row = s.execute(text("SELECT id FROM obs_users WHERE email = :e AND is_active = TRUE"),
-                        {"e": target_email}).fetchone()
-        if not row:
-            return {"error": "user_not_found"}, 404
-        uid = str(row.id)
-    
-    result = _send_digest_to_user(uid, digest_type=dtype)
-    return result
+
 @app.route("/healthz")
 def healthz():
     """Database connectivity probe. Used by cron-job.org + monitoring."""

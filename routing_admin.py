@@ -1,12 +1,10 @@
 """
-OBSIDIAN — Routing Admin Blueprint (Stage 2)
+OBSIDIAN — Routing Admin Blueprint (Stage 2 + Stage 4)
 
-Admin-facing routes for visualizing and testing the routing engine.
-- GET  /admin/routing-simulator         — UI page
-- GET  /api/admin/recent-events         — list recent events for picker
-- POST /api/admin/route-event           — trigger routing on an event
-- GET  /api/admin/deliveries/<event_id> — show all decisions for an event
+Admin-facing routes for the routing simulator and engagement telemetry.
+Only master accounts (Adi + Ankit) can access these routes.
 """
+from functools import wraps
 from flask import Blueprint, request, jsonify, session, render_template
 from sqlalchemy import text
 from db import get_session
@@ -15,7 +13,6 @@ from routing import route_event
 
 admin_bp = Blueprint("routing_admin", __name__)
 
-# Master accounts that get admin access
 MASTER_EMAILS = {
     "adi.obsdian@gmail.com",
     "ankitdubey.aitech@gmail.com"
@@ -23,8 +20,6 @@ MASTER_EMAILS = {
 
 
 def admin_required(fn):
-    """Decorator: only master accounts can hit admin routes."""
-    from functools import wraps
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if "user_id" not in session:
@@ -35,6 +30,10 @@ def admin_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
+
+# ──────────────────────────────────────────────────────────
+# ROUTING SIMULATOR
+# ──────────────────────────────────────────────────────────
 
 @admin_bp.route("/admin/routing-simulator")
 @admin_required
@@ -48,8 +47,7 @@ def recent_events():
     limit = min(int(request.args.get("limit", 20)), 50)
     with get_session() as s:
         rows = s.execute(text("""
-            SELECT id, headline, severity, event_type, geographic_scope,
-                   detected_at
+            SELECT id, headline, severity, event_type, geographic_scope, detected_at
             FROM obs_events
             ORDER BY detected_at DESC LIMIT :lim
         """), {"lim": limit}).fetchall()
@@ -68,10 +66,8 @@ def trigger_routing():
     data = request.get_json(silent=True) or {}
     event_id = data.get("event_id")
     dry_run = bool(data.get("dry_run", False))
-    
     if not event_id:
         return jsonify({"error": "event_id_required"}), 400
-    
     try:
         result = route_event(event_id, dry_run=dry_run)
         return jsonify(result)
@@ -85,23 +81,51 @@ def event_deliveries(event_id):
     with get_session() as s:
         rows = s.execute(text("""
             SELECT d.id, d.channel, d.delivery_type, d.severity, d.status,
-                   d.routing_log, d.routed_at,
-                   u.email, u.name, u.role
+                   d.routing_log, d.routed_at, u.email, u.name, u.role
             FROM obs_deliveries d
             LEFT JOIN obs_users u ON u.id = d.user_id
             WHERE d.event_id = :eid
             ORDER BY d.routed_at DESC
         """), {"eid": event_id}).fetchall()
-        
         items = []
         for r in rows:
             d = dict(r._mapping)
             d["id"] = str(d["id"])
             d["routed_at"] = d["routed_at"].isoformat() if d["routed_at"] else None
             items.append(d)
-        
         return jsonify({"deliveries": items, "count": len(items)})
-    @admin_bp.route("/admin/engagement")
+
+
+# ──────────────────────────────────────────────────────────
+# MANUAL TEST DIGEST
+# ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/api/admin/send-test-digest", methods=["POST"])
+@admin_required
+def manual_test_digest():
+    from scheduler import _send_digest_to_user
+    data = request.get_json(silent=True) or {}
+    target_email = (data.get("user_email") or "").strip().lower()
+    dtype = data.get("digest_type", "manual_test")
+    if not target_email:
+        return jsonify({"error": "user_email_required"}), 400
+    with get_session() as s:
+        row = s.execute(
+            text("SELECT id FROM obs_users WHERE email = :e AND is_active = TRUE"),
+            {"e": target_email}
+        ).fetchone()
+        if not row:
+            return jsonify({"error": "user_not_found"}), 404
+        uid = str(row.id)
+    result = _send_digest_to_user(uid, digest_type=dtype)
+    return jsonify(result)
+
+
+# ──────────────────────────────────────────────────────────
+# ENGAGEMENT DASHBOARD (Stage 4)
+# ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/admin/engagement")
 @admin_required
 def engagement_page():
     return render_template("engagement.html")
@@ -110,13 +134,9 @@ def engagement_page():
 @admin_bp.route("/api/admin/engagement-summary", methods=["GET"])
 @admin_required
 def engagement_summary():
-    """
-    Returns per-user engagement stats + recent batch-level detail.
-    """
     with get_session() as s:
-        # Per-user rollup
         user_rows = s.execute(text("""
-            SELECT 
+            SELECT
                 u.email, u.role,
                 COUNT(b.id) AS total_sent,
                 COUNT(b.opened_at) AS total_opened,
@@ -124,7 +144,9 @@ def engagement_summary():
                 MAX(b.sent_at) AS last_sent,
                 MAX(b.opened_at) AS last_opened
             FROM obs_users u
-            LEFT JOIN obs_digest_batches b ON b.user_id = u.id AND b.status IN ('sent','delivered','opened')
+            LEFT JOIN obs_digest_batches b
+                ON b.user_id = u.id
+                AND b.status IN ('sent', 'delivered', 'opened')
             WHERE u.is_active = TRUE
             GROUP BY u.email, u.role
             ORDER BY u.role
@@ -135,21 +157,22 @@ def engagement_summary():
             total_sent = r.total_sent or 0
             total_opened = r.total_opened or 0
             total_clicked = r.total_clicked or 0
+            open_rate = round(100 * total_opened / total_sent, 1) if total_sent else 0
+            click_rate = round(100 * total_clicked / total_sent, 1) if total_sent else 0
             users.append({
                 "email": r.email,
                 "role": r.role,
                 "total_sent": total_sent,
                 "total_opened": total_opened,
                 "total_clicked": total_clicked,
-                "open_rate": round(100 * total_opened / total_sent, 1) if total_sent else 0,
-                "click_rate": round(100 * total_clicked / total_sent, 1) if total_sent else 0,
+                "open_rate": open_rate,
+                "click_rate": click_rate,
                 "last_sent": r.last_sent.isoformat() if r.last_sent else None,
                 "last_opened": r.last_opened.isoformat() if r.last_opened else None,
             })
 
-        # Recent batches (last 20)
         batch_rows = s.execute(text("""
-            SELECT 
+            SELECT
                 u.email, b.digest_type, b.subject_line, b.event_count,
                 b.severity_max, b.status, b.sent_at, b.opened_at, b.first_click_at
             FROM obs_digest_batches b
@@ -176,3 +199,37 @@ def engagement_summary():
             })
 
         return jsonify({"users": users, "recent_batches": batches})
+
+
+@admin_bp.route("/api/admin/health-scores", methods=["GET"])
+@admin_required
+def health_scores():
+    with get_session() as s:
+        rows = s.execute(text("""
+            SELECT
+                u.email, u.role,
+                COUNT(b.id) AS sent_7d,
+                COUNT(b.opened_at) AS opened_7d
+            FROM obs_users u
+            LEFT JOIN obs_digest_batches b
+                ON b.user_id = u.id
+                AND b.sent_at >= NOW() - INTERVAL '7 days'
+                AND b.status IN ('sent', 'delivered', 'opened')
+            WHERE u.is_active = TRUE
+            GROUP BY u.email, u.role
+        """)).fetchall()
+
+        result = []
+        for r in rows:
+            sent = r.sent_7d or 0
+            opened = r.opened_7d or 0
+            open_rate = round(100 * opened / sent, 1) if sent else None
+            result.append({
+                "email": r.email,
+                "role": r.role,
+                "sent_7d": sent,
+                "opened_7d": opened,
+                "open_rate_7d": open_rate,
+                "health_flag": "pre_churn" if (open_rate is not None and open_rate < 40) else "healthy"
+            })
+        return jsonify({"users": result})
