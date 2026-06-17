@@ -14,7 +14,7 @@ import base64
 import os
 import threading
 import webbrowser
-from scheduler import start_scheduler, _send_digest_to_user
+from scheduler import start_scheduler
 from routing_admin import admin_bp
 from datetime import timedelta
 from flask import render_template
