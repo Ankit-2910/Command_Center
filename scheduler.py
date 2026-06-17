@@ -24,7 +24,7 @@ IST = pytz.timezone("Asia/Kolkata")
 _scheduler = None
 
 
-def get_scheduler():
+def start_scheduler():
     """Return the module-level BackgroundScheduler instance, creating it if needed."""
     global _scheduler
     if _scheduler is None:
