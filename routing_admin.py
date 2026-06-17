@@ -1,7 +1,8 @@
 """
-OBSIDIAN — Routing Admin Blueprint (Stage 2 + Stage 4)
+OBSIDIAN — Routing Admin Blueprint (Stage 2 + Stage 4 + Stage 5)
 
-Admin-facing routes for the routing simulator and engagement telemetry.
+Admin-facing routes for routing simulator, engagement, Slack testing,
+and CAP 12 prediction visibility.
 Only master accounts (Adi + Ankit) can access these routes.
 """
 from functools import wraps
@@ -233,3 +234,102 @@ def health_scores():
                 "health_flag": "pre_churn" if (open_rate is not None and open_rate < 40) else "healthy"
             })
         return jsonify({"users": result})
+
+
+# ──────────────────────────────────────────────────────────
+# SLACK TEST (Stage 5A)
+# ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/api/admin/test-slack", methods=["POST"])
+@admin_required
+def test_slack():
+    """Test Slack delivery for a user. Body: {"user_email": "..."}"""
+    import os
+    from slack_sender import build_slack_payload, send_slack_message
+
+    data = request.get_json(silent=True) or {}
+    target_email = (data.get("user_email") or "").strip().lower()
+
+    if not target_email:
+        return jsonify({"error": "user_email_required"}), 400
+
+    with get_session() as s:
+        row = s.execute(text("""
+            SELECT u.email, u.name, u.role, p.slack_webhook_url, p.channel_slack
+            FROM obs_users u
+            JOIN obs_user_preferences p ON p.user_id = u.id
+            WHERE u.email = :e AND u.is_active = TRUE
+        """), {"e": target_email}).fetchone()
+
+        if not row:
+            return jsonify({"error": "user_not_found"}), 404
+        if not row.slack_webhook_url:
+            return jsonify({"error": "no_webhook_url_configured"}), 400
+
+    app_base_url = os.environ.get("APP_BASE_URL", "https://command-center-jst4.onrender.com")
+
+    test_event = {
+        "id": "test-event-001",
+        "headline": "TEST — Red Sea Houthi escalation severity 92",
+        "summary": "This is a test message from OBSIDIAN intelligence platform. "
+                   "Your Slack integration is working correctly.",
+        "severity": 92,
+        "geographic_scope": "Red Sea / Bab el-Mandeb"
+    }
+
+    payload = build_slack_payload(
+        event=test_event,
+        user_name=row.name or row.email,
+        user_role=row.role or "analyst",
+        watchlist_entries=["Red Sea Trade", "India Domestic Risk"],
+        app_base_url=app_base_url
+    )
+
+    result = send_slack_message(row.slack_webhook_url, payload)
+    return jsonify(result)
+
+
+# ──────────────────────────────────────────────────────────
+# CAP 12 PREDICTIONS (Stage 5B)
+# ──────────────────────────────────────────────────────────
+
+@admin_bp.route("/api/admin/predictions", methods=["GET"])
+@admin_required
+def list_predictions():
+    """CAP 12 — View all logged predictions with outcome status."""
+    limit = min(int(request.args.get("limit", 50)), 200)
+    with get_session() as s:
+        rows = s.execute(text("""
+            SELECT
+                p.id, p.prediction_type, p.predicted_value,
+                p.confidence_score, p.horizon_days, p.made_at, p.model_version,
+                e.headline, e.severity, e.event_type,
+                (SELECT COUNT(*) FROM obs_ground_truth gt
+                 WHERE gt.prediction_id = p.id) AS has_outcome
+            FROM obs_predictions p
+            JOIN obs_events e ON e.id = p.event_id
+            ORDER BY p.made_at DESC
+            LIMIT :lim
+        """), {"lim": limit}).fetchall()
+
+        items = []
+        for r in rows:
+            items.append({
+                "id": str(r.id),
+                "prediction_type": r.prediction_type,
+                "predicted_value": r.predicted_value,
+                "confidence_score": r.confidence_score,
+                "horizon_days": r.horizon_days,
+                "made_at": r.made_at.isoformat() if r.made_at else None,
+                "model_version": r.model_version,
+                "event_headline": r.headline,
+                "event_severity": r.severity,
+                "event_type": r.event_type,
+                "outcome_logged": r.has_outcome > 0
+            })
+
+        return jsonify({
+            "predictions": items,
+            "count": len(items),
+            "note": "Immutable. Ground truth added in Stage 8."
+        })

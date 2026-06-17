@@ -100,7 +100,19 @@
       <h2>◎ DELIVERY CHANNELS</h2>
       <div class="toggle-row"><span>Email</span><label class="switch"><input type="checkbox" id="ch-email"><span class="slider"></span></label></div>
       <div class="toggle-row"><span>Push Notifications</span><label class="switch"><input type="checkbox" id="ch-push"><span class="slider"></span></label></div>
-      <div class="toggle-row"><span>Slack (webhook URL required)</span><label class="switch"><input type="checkbox" id="ch-slack"><span class="slider"></span></label></div>
+      <div class="toggle-row">
+  <span>Slack (webhook URL required)</span>
+  <label class="switch"><input type="checkbox" id="ch-slack" onchange="toggleSlackField()"><span class="slider"></span></label>
+</div>
+<div id="slack-url-field" class="field" style="display:none;margin-top:8px;">
+  <label>SLACK WEBHOOK URL</label>
+  <input type="text" id="slack-webhook-url" 
+         placeholder="https://hooks.slack.com/services/T.../B.../..." 
+         style="font-size:11px;" />
+  <div style="font-size:10px;color:var(--muted);margin-top:4px;">
+    Get from: Slack → Apps → Incoming Webhooks → Add to Channel
+  </div>
+</div>
       <div class="toggle-row"><span>Microsoft Teams</span><label class="switch"><input type="checkbox" id="ch-teams"><span class="slider"></span></label></div>
       <div class="toggle-row"><span>SMS (Enterprise tier)</span><label class="switch"><input type="checkbox" id="ch-sms"><span class="slider"></span></label></div>
     </div>
@@ -167,6 +179,14 @@ async function bootstrap() {
     renderIdentity(data.user);
     await loadPreferences();
     await loadWatchlists();
+function toggleSlackField() {
+  const field = $("slack-url-field");
+  if ($("ch-slack").checked) {
+    field.style.display = "block";
+  } else {
+    field.style.display = "none";
+  }
+}
     wireAutosave();              // ← NEW: activate autosave after load
     setAutosaveState("saved");   // ← NEW: initial state
   } else {
@@ -199,6 +219,10 @@ async function loadPreferences() {
   $("quiet-start").value = p.quiet_hours_start; $("quiet-end").value = p.quiet_hours_end;
   $("morning-time").value = p.morning_digest_time; $("evening-time").value = p.evening_digest_time;
   $("weekly-enabled").checked = p.weekly_brief_enabled; $("vacation-mode").checked = p.vacation_mode;
+if (p.slack_webhook_url) {
+  $("slack-webhook-url").value = p.slack_webhook_url;
+  $("slack-url-field").style.display = $("ch-slack").checked ? "block" : "none";
+}
 }
 // ──────────────────────────────────────────────────────────
 // AUTO-SAVE ENGINE
@@ -240,6 +264,7 @@ function collectPreferences() {
     channel_slack: $("ch-slack").checked,
     channel_teams: $("ch-teams").checked,
     channel_sms: $("ch-sms").checked,
+    slack_webhook_url: $("slack-webhook-url").value.trim() || null,
     severity_threshold: parseInt($("severity-threshold").value) || 50,
     quiet_hours_start: $("quiet-start").value,
     quiet_hours_end: $("quiet-end").value,

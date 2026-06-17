@@ -11,10 +11,10 @@ Architecture: see CAP 11 routing decision cube in design docs.
 
 import json
 import logging
+from prediction_logger import log_predictions_for_event
 from datetime import datetime, timedelta, time
 from typing import Optional
 from zoneinfo import ZoneInfo
-
 from sqlalchemy import text
 from db import get_session
 
@@ -455,6 +455,12 @@ def route_event(event_id: str, dry_run: bool = False) -> dict:
                             "sev": d["severity"],
                             "rlog": json.dumps(d["routing_log"])
                         })
+                        # CAP 12 — Log predictions silently (fail-soft, never blocks routing)
+        try:
+            pred_result = log_predictions_for_event(event_id)
+            log.info(f"cap12_predictions | event={event_id} | logged={pred_result.get('logged')}")
+        except Exception as pe:
+            log.warning(f"cap12_prediction_skip | event={event_id} | {pe}")
         
         return {
             "event_id": event_id,
