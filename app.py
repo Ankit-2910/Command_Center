@@ -36,7 +36,12 @@ if not os.path.isdir(_STATIC_DIR):
     if os.path.isdir(_alt):
         _STATIC_DIR = _alt
 app = Flask(__name__, static_folder=_STATIC_DIR, static_url_path="/static")
-
+@app.route("/api/admin/test-slack", methods=["GET", "POST"])
+def test_slack():
+    """TEMPORARY Stage-5 Slack trigger. Delete after verified."""
+    from flask import jsonify
+    from slack_sender import deliver_slack_alerts
+    return jsonify(deliver_slack_alerts())
 
 # ──────────────────────────────────────────────────────────
 # Stage 1 — Session config + blueprint registration
@@ -1003,17 +1008,11 @@ def healthz():
         "db": "connected" if db_ok else "unreachable",
         "version": "stage-0"
     }, status_code
-if __name__ == "__main__":
-    engine.ensure_setup()
-    engine.db().close()
-    ip = _lan_ip()
-    print("\n  OBSIDIAN command center starting...")
-    print("  On THIS computer : http://127.0.0.1:5000")
-    print(f"  On your PHONE    : http://{ip}:5000   (same WiFi; use http:// not https://)")
-    print("  Keep this window OPEN. Close it to stop the server.\n")
-    threading.Timer(1.2, open_browser).start()
-    app.run(host="0.0.0.0", port=5000, debug=False)
-from db import health_check
+
+
+# ============================================================
+# Stage 6A — PDF Export (briefs + event fallback)
+# ============================================================
 @app.route("/api/briefs/<brief_id>/pdf", methods=["GET"])
 def download_brief_pdf(brief_id):
     from flask import send_file, abort
@@ -1029,6 +1028,9 @@ def download_brief_pdf(brief_id):
         )
     except ValueError:
         abort(404, "Brief not found")
+    except Exception as e:
+        return {"error": "pdf_generation_failed", "detail": str(e)[:300]}, 500
+
 
 @app.route("/api/events/<event_id>/pdf", methods=["GET"])
 def download_event_pdf(event_id):
@@ -1045,4 +1047,42 @@ def download_event_pdf(event_id):
         )
     except ValueError:
         abort(404, "Event not found")
+    except Exception as e:
+        return {"error": "pdf_generation_failed", "detail": str(e)[:300]}, 500
 
+
+# ============================================================
+# Stage 6B — TEMPORARY key minting (DELETE after you have your key)
+# ============================================================
+@app.route("/api/admin/mint-key", methods=["GET"])
+def mint_key_temp():
+    """TEMPORARY Stage-6B key minting. DELETE after you have your key."""
+    import secrets, hashlib
+    from sqlalchemy import text
+    from db import get_session
+
+    partner = request.args.get("partner", "Test Partner")
+    raw = "obsk_" + secrets.token_urlsafe(32)
+    key_hash = hashlib.sha256(raw.encode()).hexdigest()
+    key_prefix = raw[:12]
+
+    with get_session() as s:
+        s.execute(text("""
+            INSERT INTO obs_api_keys (partner_name, key_hash, key_prefix, scopes, active)
+            VALUES (:pn, :kh, :kp, 'read', TRUE)
+        """), {"pn": partner, "kh": key_hash, "kp": key_prefix})
+
+    return jsonify({"partner": partner, "raw_key": raw,
+                    "note": "Copy raw_key now. It is not stored and cannot be recovered."})
+
+
+if __name__ == "__main__":
+    engine.ensure_setup()
+    engine.db().close()
+    ip = _lan_ip()
+    print("\n  OBSIDIAN command center starting...")
+    print("  On THIS computer : http://127.0.0.1:5000")
+    print(f"  On your PHONE    : http://{ip}:5000   (same WiFi; use http:// not https://)")
+    print("  Keep this window OPEN. Close it to stop the server.\n")
+    threading.Timer(1.2, open_browser).start()
+    app.run(host="0.0.0.0", port=5000, debug=False)
