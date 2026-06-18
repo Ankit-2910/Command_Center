@@ -381,17 +381,12 @@ def route_event(event_id: str, dry_run: bool = False) -> dict:
                             "sev": d["severity"],
                             "rlog": json.dumps(d["routing_log"])
                         })
-                        try:
-            from webhook_sender import push_event_to_webhooks
-            wh = push_event_to_webhooks(event_id)
-            log.info(f"webhooks | event={event_id} | pushed={wh.get('pushed')} | failed={wh.get('failed')}")
-        except Exception as we:
-            log.warning(f"webhook_skip | event={event_id} | {we}")
-
+                        
     # ── PHASE 2: CAP 12 Prediction logging ───────────────────────
     # CRITICAL: Must be OUTSIDE the with get_session() block above.
     # prediction_logger opens its own session — running inside an
     # existing session causes scoped_session conflicts and silent failure.
+    # ── PHASE 2: CAP 12 Prediction logging ───────────────────────
     if not dry_run:
         try:
             from prediction_logger import log_predictions_for_event
@@ -399,6 +394,13 @@ def route_event(event_id: str, dry_run: bool = False) -> dict:
             log.info(f"cap12_predictions | event={event_id} | logged={pred_result.get('logged')} | skipped={pred_result.get('skipped')}")
         except Exception as pe:
             log.warning(f"cap12_prediction_skip | event={event_id} | {pe}")
+
+        try:
+            from webhook_sender import push_event_to_webhooks
+            wh = push_event_to_webhooks(event_id)
+            log.info(f"webhooks | event={event_id} | pushed={wh.get('pushed')} | failed={wh.get('failed')}")
+        except Exception as we:
+            log.warning(f"webhook_skip | event={event_id} | {we}")
 
     # ── PHASE 3: Return result ────────────────────────────────────
     return {
