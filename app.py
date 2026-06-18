@@ -56,6 +56,8 @@ app.register_blueprint(prefs_bp)
 app.register_blueprint(watch_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(tracking_bp)
+from enterprise_api import api_v1_bp
+app.register_blueprint(api_v1_bp)
 # ──────────────────────────────────────────────────────────
 # Stage 3 — Start scheduler (gunicorn-safe)
 # ──────────────────────────────────────────────────────────

@@ -381,6 +381,12 @@ def route_event(event_id: str, dry_run: bool = False) -> dict:
                             "sev": d["severity"],
                             "rlog": json.dumps(d["routing_log"])
                         })
+                        try:
+            from webhook_sender import push_event_to_webhooks
+            wh = push_event_to_webhooks(event_id)
+            log.info(f"webhooks | event={event_id} | pushed={wh.get('pushed')} | failed={wh.get('failed')}")
+        except Exception as we:
+            log.warning(f"webhook_skip | event={event_id} | {we}")
 
     # ── PHASE 2: CAP 12 Prediction logging ───────────────────────
     # CRITICAL: Must be OUTSIDE the with get_session() block above.
