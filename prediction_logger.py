@@ -15,6 +15,12 @@ The calibration metrics in Stage 9 compare predictions vs ground truth.
 Why this matters: by Month 12, you'll have 12 months of timestamped,
 immutable predictions with verified outcomes. No competitor can replicate
 this without waiting 12 months themselves. This is the moat.
+
+NOTE ON JSONB CASTING:
+    SQLAlchemy text() treats ":" as a bind-parameter marker. Writing
+    ":val::jsonb" makes it misparse the "::" Postgres cast operator and
+    raise: syntax error at or near ":". Use CAST(:val AS jsonb) instead —
+    standard SQL, no "::", functionally identical.
 """
 import json
 import logging
@@ -156,7 +162,7 @@ def log_predictions_for_event(event_id: str, brief_id: Optional[str] = None) -> 
                 (event_id, brief_id, prediction_type, predicted_value, 
                  confidence_score, horizon_days, model_version, is_locked)
                 VALUES (:eid, :bid, 'severity',
-                        :val::jsonb, :conf, 30, :mv, TRUE)
+                        CAST(:val AS jsonb), :conf, 30, :mv, TRUE)
                 RETURNING id
             """), {
                 "eid": event_id, "bid": brief_id,
@@ -172,7 +178,7 @@ def log_predictions_for_event(event_id: str, brief_id: Optional[str] = None) -> 
                 (event_id, brief_id, prediction_type, predicted_value,
                  confidence_score, horizon_days, model_version, is_locked)
                 VALUES (:eid, :bid, 'duration',
-                        :val::jsonb, :conf, :horizon, :mv, TRUE)
+                        CAST(:val AS jsonb), :conf, :horizon, :mv, TRUE)
                 RETURNING id
             """), {
                 "eid": event_id, "bid": brief_id,
@@ -190,13 +196,13 @@ def log_predictions_for_event(event_id: str, brief_id: Optional[str] = None) -> 
                 (event_id, brief_id, prediction_type, predicted_value,
                  confidence_score, horizon_days, model_version, is_locked)
                 VALUES (:eid, :bid, 'scenario',
-                        :val::jsonb, :conf, :horizon, :mv, TRUE)
+                        CAST(:val AS jsonb), :conf, :horizon, :mv, TRUE)
                 RETURNING id
             """), {
                 "eid": event_id, "bid": brief_id,
                 "val": json.dumps({"scenarios": scenarios}),
                 "conf": max(35, confidence - 20),
-                "horizon": max(s["timeline_days"] for s in scenarios),
+                "horizon": max(sc["timeline_days"] for sc in scenarios),
                 "mv": MODEL_VERSION
             }).fetchone()
             prediction_ids.append(str(row.id))
@@ -209,7 +215,7 @@ def log_predictions_for_event(event_id: str, brief_id: Optional[str] = None) -> 
                     (event_id, brief_id, prediction_type, predicted_value,
                      confidence_score, horizon_days, model_version, is_locked)
                     VALUES (:eid, :bid, 'industry_impact',
-                            :val::jsonb, :conf, 60, :mv, TRUE)
+                            CAST(:val AS jsonb), :conf, 60, :mv, TRUE)
                     RETURNING id
                 """), {
                     "eid": event_id, "bid": brief_id,
