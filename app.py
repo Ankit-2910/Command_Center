@@ -1054,27 +1054,6 @@ def download_event_pdf(event_id):
 # ============================================================
 # Stage 6B — TEMPORARY key minting (DELETE after you have your key)
 # ============================================================
-@app.route("/api/admin/mint-key", methods=["GET"])
-def mint_key_temp():
-    """TEMPORARY Stage-6B key minting. DELETE after you have your key."""
-    import secrets, hashlib
-    from sqlalchemy import text
-    from db import get_session
-
-    partner = request.args.get("partner", "Test Partner")
-    raw = "obsk_" + secrets.token_urlsafe(32)
-    key_hash = hashlib.sha256(raw.encode()).hexdigest()
-    key_prefix = raw[:12]
-
-    with get_session() as s:
-        s.execute(text("""
-            INSERT INTO obs_api_keys (partner_name, key_hash, key_prefix, scopes, active)
-            VALUES (:pn, :kh, :kp, 'read', TRUE)
-        """), {"pn": partner, "kh": key_hash, "kp": key_prefix})
-
-    return jsonify({"partner": partner, "raw_key": raw,
-                    "note": "Copy raw_key now. It is not stored and cannot be recovered."})
-
 
 if __name__ == "__main__":
     engine.ensure_setup()
