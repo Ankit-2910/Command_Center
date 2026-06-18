@@ -1012,4 +1012,35 @@ if __name__ == "__main__":
     threading.Timer(1.2, open_browser).start()
     app.run(host="0.0.0.0", port=5000, debug=False)
 from db import health_check
+@app.route("/api/briefs/<brief_id>/pdf", methods=["GET"])
+def download_brief_pdf(brief_id):
+    from flask import send_file, abort
+    import io
+    from brief_pdf import generate_brief_pdf
+    try:
+        pdf_bytes = generate_brief_pdf(brief_id=brief_id)
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"OBSIDIAN_Brief_{brief_id[:8]}.pdf",
+        )
+    except ValueError:
+        abort(404, "Brief not found")
+
+@app.route("/api/events/<event_id>/pdf", methods=["GET"])
+def download_event_pdf(event_id):
+    from flask import send_file, abort
+    import io
+    from brief_pdf import generate_brief_pdf
+    try:
+        pdf_bytes = generate_brief_pdf(event_id=event_id)
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"OBSIDIAN_Event_{event_id[:8]}.pdf",
+        )
+    except ValueError:
+        abort(404, "Event not found")
 
