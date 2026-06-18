@@ -36,12 +36,7 @@ if not os.path.isdir(_STATIC_DIR):
     if os.path.isdir(_alt):
         _STATIC_DIR = _alt
 app = Flask(__name__, static_folder=_STATIC_DIR, static_url_path="/static")
-@app.route("/api/admin/test-slack", methods=["GET", "POST"])
-def test_slack():
-    """TEMPORARY Stage-5 Slack trigger. Delete after verified."""
-    from flask import jsonify
-    from slack_sender import deliver_slack_alerts
-    return jsonify(deliver_slack_alerts())
+
 
 # ──────────────────────────────────────────────────────────
 # Stage 1 — Session config + blueprint registration
