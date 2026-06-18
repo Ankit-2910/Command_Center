@@ -36,11 +36,12 @@ if not os.path.isdir(_STATIC_DIR):
     if os.path.isdir(_alt):
         _STATIC_DIR = _alt
 app = Flask(__name__, static_folder=_STATIC_DIR, static_url_path="/static")
-@app.route("/api/admin/test-slack", methods=["GET"])
+@app.route("/api/admin/test-slack", methods=["GET", "POST"])
 def test_slack():
-    """TEMPORARY Stage-5 trigger. Delete after Slack verified."""
+    """TEMPORARY Stage-5 Slack trigger. Delete after verified."""
+    from flask import jsonify
     from slack_sender import deliver_slack_alerts
-    return deliver_slack_alerts()
+    return jsonify(deliver_slack_alerts())
 
 # ──────────────────────────────────────────────────────────
 # Stage 1 — Session config + blueprint registration
@@ -1016,9 +1017,4 @@ if __name__ == "__main__":
     threading.Timer(1.2, open_browser).start()
     app.run(host="0.0.0.0", port=5000, debug=False)
 from db import health_check
-@app.route("/api/admin/test-slack", methods=["POST", "GET"])
-def test_slack():
-    """TEMPORARY — manual Slack delivery trigger. Remove after Stage 5 verified."""
-    from slack_sender import deliver_slack_alerts
-    return deliver_slack_alerts()
 
