@@ -65,6 +65,10 @@ from enterprise_api import api_v1_bp
 app.register_blueprint(api_v1_bp)
 from labeling import labeling_bp
 app.register_blueprint(labeling_bp)
+from labeling import labeling_bp
+app.register_blueprint(labeling_bp)
+from calibration import calibration_bp
+app.register_blueprint(calibration_bp)
 # ──────────────────────────────────────────────────────────
 # Stage 3 — Start scheduler (gunicorn-safe)
 # ──────────────────────────────────────────────────────────
