@@ -896,13 +896,28 @@ _DASHBOARD_B64 = (
 )
 EMBEDDED_HTML = base64.b64decode("".join(_DASHBOARD_B64.split())).decode("utf-8")
 
+# ── Stage 9: serve the extracted, editable dashboard template ──────────────
+# The dashboard HTML now lives in templates/index.html (readable + gittable),
+# loaded ONCE at import so there is a single source of truth per deploy and no
+# per-request disk read. The base64 EMBEDDED_HTML blob above is kept ONLY as an
+# automatic fallback if the template file is ever missing — delete or rename
+# templates/index.html to instantly roll back to the embedded version.
+_TEMPLATE_PATH = os.path.join(BASE_DIR, "templates", "index.html")
+try:
+    with open(_TEMPLATE_PATH, encoding="utf-8") as _tf:
+        DASHBOARD_HTML = _tf.read()
+    print(f"[STAGE9] serving dashboard from {_TEMPLATE_PATH} ({len(DASHBOARD_HTML)} chars)")
+except Exception as _te:
+    print(f"[STAGE9] template load failed ({_te}); falling back to embedded blob")
+    DASHBOARD_HTML = EMBEDDED_HTML
+
 
 @app.route("/")
 def home():
-    # Always serve the canonical embedded dashboard so the page is ALWAYS
-    # in sync with this app.py. Any stale web/index.html on disk is ignored
-    # (this prevents older files from silently overriding new releases).
-    resp = Response(EMBEDDED_HTML, mimetype="text/html")
+    # Stage 9: serve the extracted template (loaded once at boot). Single
+    # source of truth per deploy; no stale-file override possible. Falls back
+    # to the embedded blob automatically if the template was missing at boot.
+    resp = Response(DASHBOARD_HTML, mimetype="text/html")
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
@@ -922,9 +937,33 @@ def api_stats():
     return jsonify(engine.stats())
 
 
+# Stage 9: role -> persona-view map. Used ONLY to seed the dashboard toggle
+# from the logged-in user's Postgres role; the toggle stays source of truth.
+ROLE_TO_VIEW = {
+    "ceo": "exec", "cfo": "exec",
+    "coo": "operations", "procurement": "operations",
+    "logistics": "operations", "risk": "operations",
+    "analyst": "analyst", "custom": "analyst",
+}
+
+
 @app.route("/api/dashboard")
 def api_dashboard():
-    return jsonify(engine.dashboard())
+    d = engine.dashboard()
+    # Seed the persona toggle from the logged-in user's role (read-only, optional).
+    # Anonymous front-page traffic -> "analyst" (full view). No Postgres hit
+    # unless a session exists, so the public page stays fast.
+    default_view = "analyst"
+    if session.get("user_id"):
+        try:
+            from auth import current_user
+            u = current_user()
+            if u and u.get("role"):
+                default_view = ROLE_TO_VIEW.get(u["role"].lower(), "analyst")
+        except Exception:
+            pass
+    d["default_view"] = default_view
+    return jsonify(d)
 
 
 @app.route("/api/supply")
@@ -955,6 +994,7 @@ def api_stories():
         topic=request.args.get("topic"),
         priority=request.args.get("priority"),
         q=request.args.get("q"),
+        view=request.args.get("view"),
         limit=int(request.args.get("limit", 200)),
     ))
 

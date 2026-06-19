@@ -295,7 +295,22 @@ def collect():
             "gdelt": gdelt_new, "gdelt_outlets": gdelt_outlets, "ai": use_ai}
 
 
-def query_stories(topic=None, priority=None, q=None, limit=200):
+# ── Stage 9: role-based views ──────────────────────────────────────────────
+# A persona "view" maps to a feed-filtering strategy. Role->view resolution
+# (ceo/cfo->exec, coo/procurement/logistics/risk->operations, analyst->analyst)
+# happens in the Flask layer (app.py) from the logged-in user's Postgres role;
+# this SQLite engine only knows the three buckets. An unknown/None view is the
+# original, unfiltered behavior — byte-identical to pre-Stage-9.
+VIEW_TOPICS = {
+    "operations": ["Energy", "Economy", "Defense", "Cyber",
+                   "MiddleEast", "China", "Russia", "AsiaPacific"],
+}
+VALID_VIEWS = {"exec", "operations", "analyst"}
+
+
+def query_stories(topic=None, priority=None, q=None, view=None, limit=200):
+    if view not in VALID_VIEWS:
+        view = None  # never filter on a garbage view -> safe default behavior
     conn = db()
     sql = "SELECT title,domain,summary,url,source,added,priority,score FROM seen WHERE 1=1"
     params = []
@@ -305,10 +320,21 @@ def query_stories(topic=None, priority=None, q=None, limit=200):
     if priority and priority != "ALL":
         sql += " AND priority=?"
         params.append(priority)
+    if view == "operations":
+        topics = VIEW_TOPICS["operations"]
+        sql += " AND domain IN (%s)" % ",".join("?" * len(topics))
+        params += topics
     if q:
         sql += " AND (lower(title) LIKE ? OR lower(summary) LIKE ?)"
         params += [f"%{q.lower()}%", f"%{q.lower()}%"]
-    sql += " ORDER BY added DESC, score DESC LIMIT ?"
+    # exec re-ranks HIGH->MED->LOW so the page leads with signal; every other
+    # view (incl. default) keeps the original ordering byte-for-byte.
+    if view == "exec":
+        sql += (" ORDER BY CASE priority WHEN 'HIGH' THEN 3 "
+                "WHEN 'MEDIUM' THEN 2 ELSE 1 END DESC, added DESC, score DESC")
+    else:
+        sql += " ORDER BY added DESC, score DESC"
+    sql += " LIMIT ?"
     params.append(limit)
     rows = [dict(r) for r in conn.execute(sql, params).fetchall()]
     conn.close()
