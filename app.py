@@ -26,8 +26,6 @@ from flask import Flask, Response, render_template, session, jsonify, request, s
 from sqlalchemy import text
 from db import get_session
 from tracking import tracking_bp
-from labeling import labeling_bp
-app.register_blueprint(labeling_bp)
 import engine
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -65,6 +63,8 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(tracking_bp)
 from enterprise_api import api_v1_bp
 app.register_blueprint(api_v1_bp)
+from labeling import labeling_bp
+app.register_blueprint(labeling_bp)
 # ──────────────────────────────────────────────────────────
 # Stage 3 — Start scheduler (gunicorn-safe)
 # ──────────────────────────────────────────────────────────
