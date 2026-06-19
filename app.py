@@ -26,6 +26,8 @@ from flask import Flask, Response, render_template, session, jsonify, request, s
 from sqlalchemy import text
 from db import get_session
 from tracking import tracking_bp
+from labeling import labeling_bp
+app.register_blueprint(labeling_bp)
 import engine
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
